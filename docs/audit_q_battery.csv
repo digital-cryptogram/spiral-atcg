@@ -1,0 +1,60 @@
+==========================================================
+Spiral-ATCG v2.2.4-full-scalar-cleanup quantum-resistance probe battery
+==========================================================
+
+NOTE: All probes are CLASSICAL simulations of quantum-relevant
+      structural properties. No quantum hardware is required
+      or implied. Negative results = absence of obvious
+      quantum-attack-friendly structure within tested scope.
+
+policy,probe,metric,value
+# === Q1: Simon-period search (32 candidate periods x 1024 samples) ===
+Spiral-ATCG/BASE,simon_period,worst_consistency,0.012695
+Spiral-ATCG/BASE,simon_period,worst_shift_bit,29
+Spiral-ATCG/SAFE,simon_period,worst_consistency,0.012695
+Spiral-ATCG/SAFE,simon_period,worst_shift_bit,3
+Spiral-ATCG/AGGR,simon_period,worst_consistency,0.012695
+Spiral-ATCG/AGGR,simon_period,worst_shift_bit,11
+Spiral-ATCG/NULL,simon_period,worst_consistency,0.012695
+Spiral-ATCG/NULL,simon_period,worst_shift_bit,2
+# === Q2: Hidden-shift detection (4096 samples) ===
+Spiral-ATCG/BASE,hidden_shift,max_freq,0.000732
+Spiral-ATCG/SAFE,hidden_shift,max_freq,0.000488
+Spiral-ATCG/AGGR,hidden_shift,max_freq,0.000732
+Spiral-ATCG/NULL,hidden_shift,max_freq,0.000732
+# === Q3: Grover-margin (4096 random keys, fixed plaintext) ===
+Spiral-ATCG/BASE,grover_margin,trials,4096
+Spiral-ATCG/BASE,grover_margin,collisions,0
+Spiral-ATCG/SAFE,grover_margin,trials,4096
+Spiral-ATCG/SAFE,grover_margin,collisions,0
+Spiral-ATCG/AGGR,grover_margin,trials,4096
+Spiral-ATCG/AGGR,grover_margin,collisions,0
+Spiral-ATCG/NULL,grover_margin,trials,4096
+Spiral-ATCG/NULL,grover_margin,collisions,0
+# === Q4: Cross-round period stability (rounds 2-16) ===
+Spiral-ATCG/BASE,cross_round,avg_step_hd,161.7143
+Spiral-ATCG/BASE,cross_round,step_std,7.8782
+Spiral-ATCG/SAFE,cross_round,avg_step_hd,158.1429
+Spiral-ATCG/SAFE,cross_round,step_std,8.5021
+Spiral-ATCG/AGGR,cross_round,avg_step_hd,160.7143
+Spiral-ATCG/AGGR,cross_round,step_std,6.0565
+Spiral-ATCG/NULL,cross_round,avg_step_hd,160.7143
+Spiral-ATCG/NULL,cross_round,step_std,10.7734
+# === Q5: q-IND-CPA distinguishing bias (16384 samples) ===
+Spiral-ATCG/BASE,q_distinguishing,worst_byte_dev,0.265625
+Spiral-ATCG/SAFE,q_distinguishing,worst_byte_dev,0.437500
+Spiral-ATCG/AGGR,q_distinguishing,worst_byte_dev,0.375000
+Spiral-ATCG/NULL,q_distinguishing,worst_byte_dev,0.375000
+# === Q6: Per-policy material diversity ===
+Spiral-ATCG/BASE,material_diversity,avg_hd_LM_RC,16.1469
+Spiral-ATCG/BASE,material_diversity,avg_hd_LM_SK,15.9938
+Spiral-ATCG/BASE,material_diversity,avg_hd_LM_CD,16.1750
+Spiral-ATCG/SAFE,material_diversity,avg_hd_LM_RC,16.1203
+Spiral-ATCG/SAFE,material_diversity,avg_hd_LM_SK,15.9406
+Spiral-ATCG/SAFE,material_diversity,avg_hd_LM_CD,15.8766
+Spiral-ATCG/AGGR,material_diversity,avg_hd_LM_RC,15.9672
+Spiral-ATCG/AGGR,material_diversity,avg_hd_LM_SK,16.0031
+Spiral-ATCG/AGGR,material_diversity,avg_hd_LM_CD,16.0953
+Spiral-ATCG/NULL,material_diversity,avg_hd_LM_RC,16.0969
+Spiral-ATCG/NULL,material_diversity,avg_hd_LM_SK,16.0969
+Spiral-ATCG/NULL,material_diversity,avg_hd_LM_CD,16.0969

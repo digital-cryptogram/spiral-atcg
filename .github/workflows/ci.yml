@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.optflag }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+            cc: gcc
+            optflag: "-O0"
+          - os: ubuntu-latest
+            compiler: gcc
+            cc: gcc
+            optflag: "-O2"
+          - os: ubuntu-latest
+            compiler: clang
+            cc: clang
+            optflag: "-O0"
+          - os: ubuntu-latest
+            compiler: clang
+            cc: clang
+            optflag: "-O2"
+          - os: macos-latest
+            compiler: clang
+            cc: clang
+            optflag: "-O2"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show compiler version
+        run: ${{ matrix.cc }} --version
+
+      - name: Build (make all)
+        env:
+          CC: ${{ matrix.cc }}
+          CFLAGS: "${{ matrix.optflag }} -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude"
+        run: make all
+
+      - name: Run roundtrip test
+        run: ./build/test_roundtrip
+
+      - name: Run pair-symmetry test
+        run: ./build/test_pair_symmetry
+
+      - name: Run avalanche test
+        run: ./build/test_avalanche
+
+      - name: Run batch API test
+        run: ./build/test_batch_api
+
+      - name: Run KAT generator (verifies all 20 entries)
+        run: ./build/kat_generator > /tmp/kat.out && tail -2 /tmp/kat.out
+
+      - name: Run benchmark (smoke test)
+        run: ./build/benchmark | head -40
+
+      - name: Build heavy probes (make full)
+        env:
+          CC: ${{ matrix.cc }}
+          CFLAGS: "${{ matrix.optflag }} -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude"
+        run: make full
+
+      - name: Run thorough avalanche
+        run: ./build/test_thorough_avalanche
+
+      - name: Run material trace (smoke test)
+        run: ./build/test_material_trace | head -10
+
+  build-windows-mingw:
+    name: windows-latest / MinGW
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc make
+
+      - name: Build (make all)
+        shell: msys2 {0}
+        env:
+          CC: gcc
+          CFLAGS: "-O2 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude"
+        run: make all
+
+      - name: Run roundtrip test
+        shell: msys2 {0}
+        run: ./build/test_roundtrip
+
+      - name: Run pair-symmetry test
+        shell: msys2 {0}
+        run: ./build/test_pair_symmetry
+
+      - name: Run KAT generator
+        shell: msys2 {0}
+        run: ./build/kat_generator > kat.out && tail -2 kat.out
+
+  kat-bit-exactness:
+    name: KAT bit-exactness vs docs/KAT.md
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build with default flags
+        run: make all
+
+      - name: Run kat_generator and compare against checked-in KAT
+        shell: bash
+        run: |
+          ./build/kat_generator > /tmp/fresh_kat.out
+          # Extract ciphertexts from fresh run
+          grep "ciphertext = " /tmp/fresh_kat.out | sort -u > /tmp/fresh_ct.txt
+          # Extract ciphertexts from checked-in KAT
+          grep "ciphertext = " docs/KAT.md | sort -u > /tmp/repo_ct.txt
+          # Compare
+          if diff /tmp/fresh_ct.txt /tmp/repo_ct.txt; then
+            echo "KAT bit-exactness: PASS (20/20 ciphertexts match)"
+          else
+            echo "KAT bit-exactness: FAIL — implementation diverged from checked-in KAT"
+            exit 1
+          fi
