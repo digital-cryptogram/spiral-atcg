@@ -5,7 +5,9 @@
 [![Spec](https://img.shields.io/badge/spec-v2.0-blue)](docs/SPEC.md)
 [![Reference impl](https://img.shields.io/badge/reference-v2.2.4-green)](src/spiral_atcg.c)
 
-> An open meta-material framework for symmetric cipher design, with a fully specified 320-bit reference cipher, a comprehensive security audit, and a reproducible benchmark harness.
+> An open experimental research framework for grammar-driven round-material generation in word-oriented symmetric constructions.
+>
+> This repository is a **public review artifact**. It is not proposed as a standard-ready cipher, an AES replacement, or a production cryptographic primitive.
 >
 > Open cryptographic research from **[Digital Cryptogram (數位密碼科技)](https://www.digitalcryptogram.com.tw/)**.
 
@@ -19,33 +21,53 @@
 
 ### What this is
 
-Spiral-ATCG is a research framework for designing symmetric block ciphers as compositions of typed material families derived from session inputs through a small grammar of production rules. The framework is named after the four material types it uses (`A` anchor, `T` twist, `C` couple, `G` gate); the analogy to nucleotide pairing in DNA is intentional but informal.
+Spiral-ATCG is an experimental research framework for studying how round material in word-oriented symmetric constructions can be generated, separated, and compared through a small grammar of production rules.
 
-Concretely the project provides:
+The framework is named after four material types:
 
-- A **specification** (`docs/SPEC.md`) of the ATCG meta-material model, including alphabet, complement rule, antiparallel helicity, three-step transcription pipeline, and four named transcription policies (`BASE`, `SAFE`, `AGGR`, `NULL`).
-- A **reference cipher**, Spiral-ATCG/v2.2.4, instantiating the framework as a 320-bit block cipher with 16 rounds and four selectable transcription policies.
-- A **portable C reference implementation** (`src/spiral_atcg.c`) under 700 lines, building cleanly on Linux / macOS / Windows (MinGW).
-- A **comprehensive security audit** spanning 34 probes across 4 batteries (correctness, extended security, quantum-resistance indicators, advanced cryptanalysis).
-- **Reproducible test vectors** (`docs/KAT.md`, 5 scenarios × 4 policies = 20 entries) and a deterministic QRES dataset (`docs/QRES_data.csv`, 72 rows).
+- `A` — anchor
+- `T` — twist
+- `C` — couple
+- `G` — gate
+
+The analogy to nucleotide pairing in DNA is intentional as terminology, but it is informal and should not be read as a biological security argument.
+
+Concretely, the project provides:
+
+- A **specification** ([`docs/SPEC.md`](docs/SPEC.md)) of the ATCG material model, including alphabet, complement rule, antiparallel helicity, a three-step transcription pipeline, and named transcription policies (`BASE`, `SAFE`, `AGGR`, `NULL`).
+- A **reference substrate**, Spiral-ATCG/v2.2.4, instantiating the framework as a 320-bit word-oriented experimental construction with 16 rounds and selectable transcription policies.
+- A **portable C reference implementation** ([`src/spiral_atcg.c`](src/spiral_atcg.c)) under 700 lines, building on Linux / macOS / Windows (MinGW).
+- **Regression and structural-analysis probes** covering correctness, diffusion sanity, policy behaviour, reduced-round behaviour, and additional structural checks.
+- **Reproducible test vectors** ([`docs/KAT.md`](docs/KAT.md), 5 scenarios × 4 policies = 20 entries) and a deterministic structural-probe dataset ([`docs/QRES_data.csv`](docs/QRES_data.csv), 72 rows).
 - A **benchmark harness** with high-resolution timing, multiple optimization levels, and per-policy reporting.
 
 ### What this is *not*
 
-Honest scope so this is judged correctly:
+Honest scope so this work is judged correctly:
 
-- **Not a finalized standard, not certified.** No FIPS 140-3, no PCI DSS, no Common Criteria certification. Production cryptography in regulated environments must use NIST-approved algorithms.
-- **Not a security proof.** No IND-CPA / IND-CCA / QROM proof, in line with how almost all standalone block ciphers are positioned (including AES, ChaCha20, SPECK).
-- **Not a replacement for AES.** Spiral-ATCG is a research framework. It is suitable for analysis, education, and as a complement to standard cryptography in `Crypto Agility` settings — not as a default cipher choice.
-- **Not a post-quantum cipher** in the technical sense (post-quantum refers to public-key constructions; symmetric ciphers obtain quantum resistance through key size and the Grover bound).
+- **Not a finalized standard and not certified.** No FIPS 140-3, PCI DSS, Common Criteria, or NIST validation is claimed.
+- **Not a security proof.** No IND-CPA, IND-CCA, AEAD, PRP, QROM, or post-quantum security theorem is claimed.
+- **Not a replacement for AES or any NIST-approved primitive.** Spiral-ATCG is a research artifact for analysis and experimentation, not a default deployment choice.
+- **Not a post-quantum cipher in the technical sense.** Post-quantum security normally refers to public-key constructions; symmetric constructions are usually discussed through key size, generic search cost, and the Grover bound.
+- **Not a claim that the tests prove security.** The included tests are regression and structural-health checks. They are useful for reproducibility and for identifying obvious failures, but they do not replace independent cryptanalysis.
 
 ### Why publish this
 
 Three reasons:
 
-1. **Open research benefits from external eyes.** Specifications, reference code, and audit data being public is the only honest path for a cryptographic project.
-2. **The framework abstraction is the contribution.** Separating cipher design into typed alphabet (Layer 1) → grammar (Layer 2) → round materials (Layer 3) → substrate (Layer 4) gives a cleaner vocabulary for analysis than the conventional "key schedule + round function" split.
-3. **Credibility through transparency.** Digital Cryptogram builds enterprise PQC and KMS products; this open project demonstrates the cryptographic depth behind those products.
+1. **Open review requires reproducible artifacts.** Specifications, reference code, test vectors, and probe data are public so that others can inspect, reproduce, and challenge the construction.
+2. **The framework abstraction is the research question.** Spiral-ATCG separates material alphabet, production grammar, transcription, policies, round material, and substrate transition. This gives a vocabulary for studying policy-ablatable round-material generation rather than treating all material generation as an opaque key-schedule detail.
+3. **The project is intended to invite external analysis.** We are especially interested in reduced-round, differential, linear, rotational, invariant-subspace, related-key, policy-aliasing, and implementation-level analysis.
+
+### Questions for reviewers
+
+We welcome technical feedback on questions such as:
+
+- Is the separation between round-material generation and substrate transition a useful design abstraction?
+- Are the policy definitions meaningfully distinct, or are some policies constructionally aliased?
+- Are there reduced-round differential, linear, rotational, slide-like, invariant-subspace, or related-key distinguishers?
+- Does the ATCG transcription layer reduce to a known key-schedule or whitening pattern?
+- Which additional analyses would make this artifact more useful to the cryptology community?
 
 ### Quick start
 
@@ -54,7 +76,7 @@ git clone https://github.com/digital-cryptogram/spiral-atcg.git
 cd spiral-atcg
 make all          # build library + standard tests + KAT generator + benchmark
 make test         # run roundtrip + pair-symmetry + avalanche + batch API tests
-make full         # build + run heavier probes (thorough avalanche, material trace, QRES)
+make full         # build + run heavier probes
 make bench        # run the high-resolution benchmark
 ```
 
@@ -68,17 +90,19 @@ BATCH API PASSED policy=BASE / SAFE / AGGR / NULL
 ALL 20 KAT ENTRIES PASSED ROUNDTRIP
 ```
 
-### Audit summary at a glance
+### Probe summary at a glance
 
-| Battery | Probes | Result |
-|---|---|---|
-| Bundled correctness | 8 | All pass |
-| Extended security | 8 (differential, linear, key avalanche, bit balance, related-key, slide, fixed-point, reduced-round) | No anomaly |
-| Quantum-resistance indicators | 6 (Simon period, hidden shift, Grover margin, cross-round period, q-distinguishing, material diversity) | No anomaly |
-| Advanced cryptanalysis | 10 + 2 corrections (quantum walk, boomerang, algebraic) | No anomaly |
-| **Total** | **34 probes / 12 attack families** | **No structural anomaly within tested scope** |
+| Battery | Probes | Scope | Result |
+|---|---:|---|---|
+| Bundled correctness | 8 | API, roundtrip, pair symmetry, KAT consistency | Pass within test suite |
+| Extended structural probes | 8 | differential, linear, key avalanche, bit balance, related-key, slide, fixed-point, reduced-round checks | No anomaly observed within tested scope |
+| Additional structural probes | 6 | period, hidden-shift-style, search-margin, cross-round period, q-distinguishing, material diversity checks | No anomaly observed within tested scope |
+| Advanced exploratory probes | 10 + 2 corrections | quantum-walk-style, boomerang-style, algebraic-style exploratory checks | No anomaly observed within tested scope |
+| **Total** | **34 probes / 12 families** | Regression and structural-health testing | No structural anomaly observed within tested scope |
 
-The audit reports document one case where an initial probe design produced a false-positive signal (cube-position collisions causing trivial cube collapse); we corrected the probe and republished both versions. See `docs/ADVANCED_AUDIT.md` for the methodology note.
+These results are **not security proofs**. They document the behaviour of the reference implementation under the included probe suite.
+
+The reports also document one case where an initial probe design produced a false-positive signal: cube-position collisions caused trivial cube collapse. The probe was corrected, and both versions were preserved for transparency. See [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md) for the methodology note.
 
 ### Repository layout
 
@@ -86,11 +110,11 @@ The audit reports document one case where an initial probe design produced a fal
 spiral-atcg/
 ├── src/            Reference C implementation
 ├── include/        Public C API
-├── tests/          Correctness tests + audit batteries
+├── tests/          Correctness tests + probe batteries
 ├── bench/          High-resolution benchmark
-├── docs/           Specification, audit reports, test vectors, changelogs
-├── Makefile        GNU Make build (default: Linux/macOS, also MinGW)
-├── CMakeLists.txt  CMake build (cross-platform)
+├── docs/           Specification, reports, test vectors, changelogs
+├── Makefile        GNU Make build
+├── CMakeLists.txt  CMake build
 └── .github/        CI workflow
 ```
 
@@ -98,37 +122,42 @@ spiral-atcg/
 
 For different readers:
 
-- **First-time visitor**: read this README, then [`docs/SPEC.md`](docs/SPEC.md) §1–§7.
-- **Security reviewer**: [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) → [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md) → [`docs/QRES_summary.md`](docs/QRES_summary.md).
-- **Implementer**: [`docs/SPEC.md`](docs/SPEC.md) → [`include/spiral_atcg.h`](include/spiral_atcg.h) → [`src/spiral_atcg.c`](src/spiral_atcg.c) → [`docs/KAT.md`](docs/KAT.md) for test vectors.
-- **Procurement / compliance**: this README + [`docs/QRES_summary.md`](docs/QRES_summary.md) framing section + [SECURITY.md](SECURITY.md).
-- **Performance reviewer**: build with `make bench` and read [`docs/CHANGELOG_v2.2.4.md`](docs/CHANGELOG_v2.2.4.md) for the optimization trajectory.
+- **First-time visitor:** read this README, then [`docs/SPEC.md`](docs/SPEC.md) §1–§7.
+- **Cryptology reviewer:** [`docs/SPEC.md`](docs/SPEC.md) → [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) → [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md) → [`docs/QRES_summary.md`](docs/QRES_summary.md).
+- **Implementer:** [`docs/SPEC.md`](docs/SPEC.md) → [`include/spiral_atcg.h`](include/spiral_atcg.h) → [`src/spiral_atcg.c`](src/spiral_atcg.c) → [`docs/KAT.md`](docs/KAT.md).
+- **Performance reviewer:** build with `make bench` and read [`docs/CHANGELOG_v2.2.4.md`](docs/CHANGELOG_v2.2.4.md).
+
+### Historical documentation note
+
+Some files under `docs/` are preserved as engineering history, release notes, or exploratory audit records. If there is any difference in claim wording between those documents and this README, the most conservative interpretation should be used.
+
+In particular, terms such as `AEAD-style`, `schedule-hidden`, `replay protection`, `quantum-resistance indicators`, `security audit`, and `HARDENED` should be read as implementation labels or engineering descriptions, not as formal security claims.
 
 ### License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+Apache License 2.0. See [`LICENSE`](LICENSE).
 
-The Apache 2.0 license includes an explicit patent grant, which we believe is the appropriate posture for an open cryptographic research project.
+The Apache 2.0 license includes a patent grant clause, which is appropriate for an open research artifact intended for public review.
 
 ### Citing this work
 
 ```bibtex
 @misc{spiral_atcg_2026,
-  title  = {Spiral-ATCG: An Open Meta-Material Framework for Symmetric Cipher Design},
-  author = {Digital Cryptogram},
-  year   = {2026},
+  title        = {Spiral-ATCG: A Reproducible Experimental Framework for Grammar-Driven Round-Material Generation},
+  author       = {Digital Cryptogram},
+  year         = {2026},
   howpublished = {\url{https://github.com/digital-cryptogram/spiral-atcg}}
 }
 ```
 
 ### Contact
 
-- **Sponsoring organization**: [Digital Cryptogram (數位密碼科技股份有限公司)](https://www.digitalcryptogram.com.tw/)
-- **Address**: 114 台北市內湖區瑞光路 578 號 8 樓
-- **Phone**: 02-2657-5188
-- **Email**: sales_digi@digitalcryptogram.com.tw
-- **Bug reports / security disclosures**: see [SECURITY.md](SECURITY.md)
-- **Contributions**: see [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Sponsoring organization:** [Digital Cryptogram (數位密碼科技股份有限公司)](https://www.digitalcryptogram.com.tw/)
+- **Address:** 114 台北市內湖區瑞光路 578 號 8 樓
+- **Phone:** 02-2657-5188
+- **Email:** casey@ruitingtech.com.tw
+- **Bug reports / security disclosures:** see [`SECURITY.md`](SECURITY.md)
+- **Contributions:** see [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ---
 
@@ -136,33 +165,53 @@ The Apache 2.0 license includes an explicit patent grant, which we believe is th
 
 ### 這是什麼
 
-Spiral-ATCG 是一個對稱式區塊加密演算法的研究框架。它把 cipher 設計拆成「型別化的材料家族」這個層次，並透過一組 production rule grammar 從 session inputs 推導出每一輪所需的材料。框架以四個材料型別命名 (`A` anchor、`T` twist、`C` couple、`G` gate)；DNA 鹼基配對的類比是有意採用但屬於命名層的 metaphor。
+Spiral-ATCG 是一個實驗性研究框架，用來研究 word-oriented 對稱式構造中的 round material 如何透過小型 production-rule grammar 產生、分離與比較。
 
-具體上本專案提供：
+框架名稱來自四種材料型別：
 
-- ATCG 元材料模型的**完整 spec** (`docs/SPEC.md`)，包含 alphabet、complement rule、antiparallel helicity、三段 transcription pipeline、以及四種命名 transcription policy (`BASE`、`SAFE`、`AGGR`、`NULL`)。
-- **參考 cipher** Spiral-ATCG/v2.2.4，將框架實例化為 320-bit block / 16-round / 4 個可選 policy 的對稱式區塊加密。
-- 一份不到 700 行的**可攜式 C 參考實作** (`src/spiral_atcg.c`)，可在 Linux / macOS / Windows (MinGW) 上乾淨編譯。
-- 完整**安全性稽核**：4 個 battery、總計 34 個 probe（涵蓋 correctness、extended security、quantum-resistance indicators、advanced cryptanalysis）。
-- **可重現的測試向量** (`docs/KAT.md`，5 scenario × 4 policy = 20 entries) 與確定性 QRES 資料集 (`docs/QRES_data.csv`，72 rows)。
-- **效能基準測試**框架，使用高解析度 timer、多個 optimization level、per-policy reporting。
+- `A` — anchor
+- `T` — twist
+- `C` — couple
+- `G` — gate
+
+DNA 鹼基配對的類比是有意採用的術語，但它是非正式 metaphor，不應被解讀為生物學式安全性論證。
+
+具體而言，本專案提供：
+
+- ATCG material model 的**規格文件** ([`docs/SPEC.md`](docs/SPEC.md))，包含 alphabet、complement rule、antiparallel helicity、三段 transcription pipeline，以及命名 transcription policies (`BASE`、`SAFE`、`AGGR`、`NULL`)。
+- **參考 substrate** Spiral-ATCG/v2.2.4，將框架實例化為 320-bit word-oriented experimental construction，包含 16 rounds 與可選 transcription policies。
+- 一份不到 700 行的**可攜式 C 參考實作** ([`src/spiral_atcg.c`](src/spiral_atcg.c))，可在 Linux / macOS / Windows (MinGW) 上編譯。
+- **Regression 與 structural-analysis probes**，涵蓋 correctness、diffusion sanity、policy behaviour、reduced-round behaviour 與其他結構性檢查。
+- **可重現測試向量** ([`docs/KAT.md`](docs/KAT.md)，5 scenarios × 4 policies = 20 entries) 與確定性 structural-probe dataset ([`docs/QRES_data.csv`](docs/QRES_data.csv)，72 rows)。
+- **效能基準測試框架**，使用高解析度 timer、多種 optimization level 與 per-policy reporting。
 
 ### 這不是什麼
 
-為了讓使用者能正確判斷本專案的定位，明確列出 scope:
+為了讓使用者正確判斷本專案定位，明確列出 scope：
 
-- **這不是已完成的標準、未取得認證**。沒有 FIPS 140-3、沒有 PCI DSS、沒有 Common Criteria。受監管環境的生產加密應使用 NIST 認證演算法。
-- **這不是 security proof**。沒有 IND-CPA / IND-CCA / QROM 證明 — 這個 status 跟幾乎所有 standalone block cipher 一樣（包括 AES、ChaCha20、SPECK）。
-- **這不是 AES 的取代品**。Spiral-ATCG 是研究框架，適合用於分析、教學、以及 `Crypto Agility` 場景中作為標準演算法的補充選擇 — 不是預設加密選項。
-- **嚴格意義上不是後量子 cipher**（後量子指公開金鑰構造；對稱 cipher 的量子抗性來自 key size + Grover bound）。
+- **不是已完成標準，也未取得認證。** 不宣稱 FIPS 140-3、PCI DSS、Common Criteria 或 NIST validation。
+- **不是 security proof。** 不宣稱 IND-CPA、IND-CCA、AEAD、PRP、QROM 或 post-quantum security theorem。
+- **不是 AES 或任何 NIST-approved primitive 的取代品。** Spiral-ATCG 是分析與實驗用研究 artifact，不是預設部署選項。
+- **嚴格意義上不是後量子 cipher。** 後量子安全通常指公開金鑰構造；對稱式構造通常透過 key size、generic search cost 與 Grover bound 討論。
+- **不宣稱測試結果證明安全。** 內含測試是 regression 與 structural-health checks，可用於重現與發現明顯失敗，但不能取代獨立密碼分析。
 
 ### 為什麼開源
 
 三個原因：
 
-1. **公開研究受惠於外部審視**。Spec、reference code、audit data 全部 public 是密碼學專案唯一誠實的路徑。
-2. **框架抽象本身是貢獻**。把 cipher 設計拆成 typed alphabet (Layer 1) → grammar (Layer 2) → round materials (Layer 3) → substrate (Layer 4) 的分層，比傳統「key schedule + round function」二分法提供更乾淨的分析語彙。
-3. **以透明度建立 credibility**。數位密碼科技開發 enterprise PQC 與 KMS 產品；這個 open project 展示這些產品背後的密碼學深度。
+1. **公開審查需要可重現 artifact。** Spec、reference code、test vectors 與 probe data 全部公開，讓外部研究者可以檢查、重現與挑戰此構造。
+2. **框架抽象本身是研究問題。** Spiral-ATCG 將 material alphabet、production grammar、transcription、policies、round material 與 substrate transition 分離，提供一套研究 policy-ablatable round-material generation 的語彙，而不是把所有 material generation 都視為不透明 key schedule 細節。
+3. **本專案目標是邀請外部分析。** 特別希望獲得 reduced-round、differential、linear、rotational、invariant-subspace、related-key、policy-aliasing 與 implementation-level analysis。
+
+### 給審查者的問題
+
+歡迎針對以下問題提供技術回饋：
+
+- round-material generation 與 substrate transition 的分離，是否是有用的設計抽象？
+- policy definitions 是否具有實質差異，或某些 policies 是否 constructionally aliased？
+- 是否存在 reduced-round differential、linear、rotational、slide-like、invariant-subspace 或 related-key distinguishers？
+- ATCG transcription layer 是否可化約為已知 key schedule 或 whitening pattern？
+- 還需要哪些分析，才能讓這個 artifact 對 cryptology community 更有用？
 
 ### 快速開始
 
@@ -171,7 +220,7 @@ git clone https://github.com/digital-cryptogram/spiral-atcg.git
 cd spiral-atcg
 make all          # 編譯 library + 標準測試 + KAT 產生器 + benchmark
 make test         # 跑 roundtrip + pair-symmetry + avalanche + batch API 測試
-make full         # 加上重型 probe (thorough avalanche、material trace、QRES)
+make full         # 編譯並執行較重的 probes
 make bench        # 跑高解析度 benchmark
 ```
 
@@ -185,17 +234,19 @@ BATCH API PASSED policy=BASE / SAFE / AGGR / NULL
 ALL 20 KAT ENTRIES PASSED ROUNDTRIP
 ```
 
-### 稽核結果一覽
+### Probe 結果一覽
 
-| Battery | Probe 數 | 結果 |
-|---|---|---|
-| 內建 correctness 測試 | 8 | 全過 |
-| 擴展安全測試 | 8（differential、linear、key avalanche、bit balance、related-key、slide、fixed-point、reduced-round） | 無 anomaly |
-| Quantum-resistance 指標 | 6（Simon period、hidden shift、Grover margin、cross-round period、q-distinguishing、material diversity） | 無 anomaly |
-| 進階密碼分析 | 10 + 2 修正（quantum walk、boomerang、algebraic） | 無 anomaly |
-| **合計** | **34 probes / 12 attack families** | **測試範圍內無結構性異常** |
+| Battery | Probe 數 | Scope | 結果 |
+|---|---:|---|---|
+| 內建 correctness 測試 | 8 | API、roundtrip、pair symmetry、KAT consistency | 測試套件內通過 |
+| 擴展結構性 probes | 8 | differential、linear、key avalanche、bit balance、related-key、slide、fixed-point、reduced-round checks | 測試範圍內未觀察到 anomaly |
+| 額外結構性 probes | 6 | period、hidden-shift-style、search-margin、cross-round period、q-distinguishing、material diversity checks | 測試範圍內未觀察到 anomaly |
+| 進階探索性 probes | 10 + 2 修正 | quantum-walk-style、boomerang-style、algebraic-style exploratory checks | 測試範圍內未觀察到 anomaly |
+| **合計** | **34 probes / 12 families** | Regression and structural-health testing | 測試範圍內未觀察到結構性異常 |
 
-稽核報告中明確記載一次 probe 設計造成的 false-positive 信號（cube position collision 導致 trivial cube collapse）— 我們修正 probe 並 republish 兩個版本。Methodology note 見 `docs/ADVANCED_AUDIT.md`。
+這些結果**不是安全性證明**，只是記錄 reference implementation 在內含 probe suite 下的行為。
+
+稽核報告中也記錄一次初始 probe 設計造成的 false-positive 信號：cube-position collisions 導致 trivial cube collapse。該 probe 已被修正，兩個版本都保留作為透明紀錄。Methodology note 見 [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md)。
 
 ### 檔案結構
 
@@ -203,11 +254,11 @@ ALL 20 KAT ENTRIES PASSED ROUNDTRIP
 spiral-atcg/
 ├── src/            參考 C 實作
 ├── include/        公開 C API
-├── tests/          Correctness 測試 + 稽核 battery
+├── tests/          Correctness 測試 + probe batteries
 ├── bench/          高解析度 benchmark
-├── docs/           Spec、稽核報告、測試向量、changelog
-├── Makefile        GNU Make build（預設 Linux/macOS，也支援 MinGW）
-├── CMakeLists.txt  CMake build（跨平台）
+├── docs/           Spec、reports、test vectors、changelogs
+├── Makefile        GNU Make build
+├── CMakeLists.txt  CMake build
 └── .github/        CI workflow
 ```
 
@@ -215,34 +266,39 @@ spiral-atcg/
 
 依照不同讀者：
 
-- **第一次來訪**：讀本 README，再看 [`docs/SPEC.md`](docs/SPEC.md) §1–§7。
-- **資安審查者**：[`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) → [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md) → [`docs/QRES_summary.md`](docs/QRES_summary.md)。
-- **實作者**：[`docs/SPEC.md`](docs/SPEC.md) → [`include/spiral_atcg.h`](include/spiral_atcg.h) → [`src/spiral_atcg.c`](src/spiral_atcg.c) → [`docs/KAT.md`](docs/KAT.md) 取測試向量。
-- **採購 / 法遵**：本 README + [`docs/QRES_summary.md`](docs/QRES_summary.md) 的 framing 章節 + [SECURITY.md](SECURITY.md)。
-- **效能審查者**：用 `make bench` 編譯後執行，並參閱 [`docs/CHANGELOG_v2.2.4.md`](docs/CHANGELOG_v2.2.4.md) 看 optimization 軌跡。
+- **第一次來訪：** 讀本 README，再看 [`docs/SPEC.md`](docs/SPEC.md) §1–§7。
+- **Cryptology reviewer：** [`docs/SPEC.md`](docs/SPEC.md) → [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) → [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md) → [`docs/QRES_summary.md`](docs/QRES_summary.md)。
+- **實作者：** [`docs/SPEC.md`](docs/SPEC.md) → [`include/spiral_atcg.h`](include/spiral_atcg.h) → [`src/spiral_atcg.c`](src/spiral_atcg.c) → [`docs/KAT.md`](docs/KAT.md)。
+- **效能審查者：** 用 `make bench` 編譯後執行，並參閱 [`docs/CHANGELOG_v2.2.4.md`](docs/CHANGELOG_v2.2.4.md)。
+
+### 歷史文件說明
+
+`docs/` 下部分文件保留為工程歷史、release notes 或探索性稽核紀錄。如果這些文件與本 README 在 claim 語氣上有差異，應採用較保守的解讀。
+
+特別是 `AEAD-style`、`schedule-hidden`、`replay protection`、`quantum-resistance indicators`、`security audit` 與 `HARDENED` 等詞，應解讀為 implementation labels 或工程描述，**不是 formal security claims**。
 
 ### 授權
 
-Apache License 2.0，詳見 [LICENSE](LICENSE)。
+Apache License 2.0，詳見 [`LICENSE`](LICENSE)。
 
-Apache 2.0 包含明確的 patent grant clause，我們認為這是 open cryptographic research project 適當的授權姿態。
+Apache 2.0 包含 patent grant clause，適合作為公開審查用研究 artifact 的授權。
 
 ### 引用方式
 
 ```bibtex
 @misc{spiral_atcg_2026,
-  title  = {Spiral-ATCG: An Open Meta-Material Framework for Symmetric Cipher Design},
-  author = {Digital Cryptogram},
-  year   = {2026},
+  title        = {Spiral-ATCG: A Reproducible Experimental Framework for Grammar-Driven Round-Material Generation},
+  author       = {Digital Cryptogram},
+  year         = {2026},
   howpublished = {\url{https://github.com/digital-cryptogram/spiral-atcg}}
 }
 ```
 
 ### 聯絡資訊
 
-- **贊助組織**：[數位密碼科技股份有限公司 (Digital Cryptogram)](https://www.digitalcryptogram.com.tw/)
-- **地址**：114 台北市內湖區瑞光路 578 號 8 樓
-- **電話**：02-2657-5188
-- **Email**：sales_digi@digitalcryptogram.com.tw
-- **Bug 回報 / 資安揭露**：請見 [SECURITY.md](SECURITY.md)
-- **貢獻方式**：請見 [CONTRIBUTING.md](CONTRIBUTING.md)
+- **贊助組織：** [數位密碼科技股份有限公司 (Digital Cryptogram)](https://www.digitalcryptogram.com.tw/)
+- **地址：** 114 台北市內湖區瑞光路 578 號 8 樓
+- **電話：** 02-2657-5188
+- **Email：** casey@ruitingtech.com.tw
+- **Bug 回報 / 資安揭露：** 請見 [`SECURITY.md`](SECURITY.md)
+- **貢獻方式：** 請見 [`CONTRIBUTING.md`](CONTRIBUTING.md)
