@@ -1,5 +1,5 @@
 # Spiral-ATCG
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20004438.svg)](https://doi.org/10.5281/zenodo.20004438)
 [![CI](https://github.com/digital-cryptogram/spiral-atcg/actions/workflows/ci.yml/badge.svg)](https://github.com/digital-cryptogram/spiral-atcg/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Spec](https://img.shields.io/badge/spec-v2.0-blue)](docs/SPEC.md)
@@ -142,11 +142,14 @@ The Apache 2.0 license includes a patent grant clause, which is appropriate for 
 ### Citing this work
 
 ```bibtex
-@misc{spiral_atcg_2026,
-  title        = {Spiral-ATCG: A Reproducible Experimental Framework for Grammar-Driven Round-Material Generation},
-  author       = {Digital Cryptogram},
-  year         = {2026},
-  howpublished = {\url{https://github.com/digital-cryptogram/spiral-atcg}}
+@misc{chao_2026_spiral_atcg,
+  author       = {Chao, Yiyu},
+  title        = {{Spiral-ATCG: A Reproducible Experimental Substrate
+                   for Grammar-Driven Round-Material Generation}},
+  year         = 2026,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.20004438},
+  url          = {https://doi.org/10.5281/zenodo.20004438}
 }
 ```
 
