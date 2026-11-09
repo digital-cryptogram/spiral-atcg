@@ -1,5 +1,5 @@
 /*
- * Spiral-ATCG v2.1 KAT (Known-Answer Test) generator.
+ * Spiral-ATCG v2.2.5 KAT (Known-Answer Test) generator.
  *
  * Generates 5 test scenarios x 4 policies = 20 KAT entries.
  * Each entry: (master_seed, nonce, session_id, plaintext) -> ciphertext.
@@ -9,6 +9,9 @@
 #include <stdint.h>
 #include <string.h>
 #include "spiral_atcg.h"
+#include "kat_expected_v225.h"
+
+static int verify_expected = 1;
 
 static void hex_dump(const char *label, const uint8_t *p, size_t n) {
     printf("%s = ", label);
@@ -81,7 +84,7 @@ static void scenario_all_0xff(kat_scenario_t *s) {
     memset(s->plaintext, 0xFF, 40);
 }
 
-static int run_kat_entry(const kat_scenario_t *s, spiral_atcg_policy_t policy) {
+static int run_kat_entry(const kat_scenario_t *s, spiral_atcg_policy_t policy, size_t scenario_index) {
     spiral_atcg_ctx_t ctx;
     uint8_t ciphertext[40];
     uint8_t recovered[40];
@@ -110,9 +113,9 @@ static int run_kat_entry(const kat_scenario_t *s, spiral_atcg_policy_t policy) {
 
     int rt_ok = (memcmp(s->plaintext, recovered, 40) == 0);
 
-    printf("\n--- %s policy=%s rounds=%u rc=%s roundtrip=%s ---\n",
+    printf("\n--- %s policy=%s rounds=%u substrate=%s roundtrip=%s ---\n",
            s->name, spiral_atcg_policy_name(policy),
-           SPIRAL_ATCG_DEFAULT_ROUNDS, "BitRev(~x)",
+           SPIRAL_ATCG_DEFAULT_ROUNDS, "Feistel-v2.2.5",
            rt_ok ? "PASS" : "FAIL");
     hex_dump("master    ", s->master,    32);
     hex_dump("nonce     ", s->nonce,     16);
@@ -120,18 +123,22 @@ static int run_kat_entry(const kat_scenario_t *s, spiral_atcg_policy_t policy) {
     hex_dump("plaintext ", s->plaintext, 40);
     hex_dump("ciphertext", ciphertext,   40);
 
-    return rt_ok ? 0 : 1;
+    int kat_ok = !verify_expected || memcmp(ciphertext, kat_expected_v225[scenario_index][policy], 40) == 0;
+    if (!kat_ok) fprintf(stderr, "FROZEN KAT MISMATCH: %s policy=%s\n", s->name, spiral_atcg_policy_name(policy));
+    return rt_ok && kat_ok ? 0 : 1;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    if (argc == 2 && strcmp(argv[1], "--generate") == 0) verify_expected = 0;
+    else if (argc != 1) { fprintf(stderr, "Usage: %s [--generate]\n", argv[0]); return 2; }
     printf("Spiral-ATCG v%s KAT generation\n", SPIRAL_ATCG_VERSION_STRING);
-    printf("rounds=%u block=%u master=%u nonce=%u session=%u rc=%s\n",
+    printf("rounds=%u block=%u master=%u nonce=%u session=%u substrate=%s\n",
            SPIRAL_ATCG_DEFAULT_ROUNDS,
            SPIRAL_ATCG_BLOCK_BYTES,
            SPIRAL_ATCG_MASTER_BYTES,
            SPIRAL_ATCG_NONCE_BYTES,
            SPIRAL_ATCG_SESSION_BYTES,
-           "BitRev(~x)");
+           "Feistel-v2.2.5");
 
     kat_scenario_t scenarios[5];
     scenario_all_zero       (&scenarios[0]);
@@ -155,7 +162,7 @@ int main(void) {
 
         uint8_t cts[4][SPIRAL_ATCG_BLOCK_BYTES];
         for (int p = 0; p < 4; p++) {
-            failures += run_kat_entry(&scenarios[i], policies[p]);
+            failures += run_kat_entry(&scenarios[i], policies[p], i);
 
             spiral_atcg_ctx_t ctx;
             if (spiral_atcg_init_session(&ctx, scenarios[i].master, scenarios[i].nonce, scenarios[i].sid,
@@ -187,10 +194,11 @@ int main(void) {
 
     printf("\n========================================\n");
     if (failures == 0 && policy_collision_failures == 0) {
+        printf("%s\n", verify_expected ? "ALL 20 FROZEN KAT ENTRIES MATCHED" : "GENERATION ONLY: frozen KAT comparison disabled");
         printf("ALL 20 KAT ENTRIES PASSED ROUNDTRIP\n");
         printf("ALL 5 SCENARIOS PASSED POLICY-DISTINCTNESS CHECK\n");
     } else {
-        printf("ROUNDTRIP FAILURES: %d / 20\n", failures);
+        printf("ROUNDTRIP OR FROZEN KAT FAILURES: %d / 20\n", failures);
         printf("POLICY COLLISION FAILURES: %d\n", policy_collision_failures);
     }
     return failures + policy_collision_failures;

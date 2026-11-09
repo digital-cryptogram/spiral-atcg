@@ -11,7 +11,6 @@
 #define ATCG_WORDS ((int)SPIRAL_ATCG_WORDS)
 
 ATCG_ALWAYS_INLINE uint32_t rotl32(uint32_t x, int r) { r &= 31; return r ? ((x << r) | (x >> (32 - r))) : x; }
-ATCG_ALWAYS_INLINE uint32_t rotr32(uint32_t x, int r) { r &= 31; return r ? ((x >> r) | (x << (32 - r))) : x; }
 
 ATCG_ALWAYS_INLINE uint32_t bit_reverse32(uint32_t x) {
     x = ((x & 0x55555555u) << 1) | ((x >> 1) & 0x55555555u);
@@ -226,12 +225,9 @@ spiral_status_t spiral_atcg_precompute_materials(const spiral_atcg_strands_t *st
 }
 
 /* =====================
- * v2.2-strength substrate helpers
- *
- * Keeps ATCG v2 transcription unchanged, but uses a Spiral-DNA-320
- * v1-inspired reversible half-state substrate with round-dependent
- * dual-input expansion, F1/F2 stride permutations, SpiralMix_v2-style
- * butterfly diffusion, and output twist.
+ * v2.2.5 experimental Feistel substrate helpers.
+ * ATCG transcription is unchanged. The round function below consumes only
+ * the right half; the same mask is never applied to both state halves.
  * ===================== */
 
 static void material_k(uint32_t k[5], const spiral_round_material_t *m, uint32_t r) {
@@ -247,10 +243,6 @@ static void fill_round_cache(spiral_round_cache_t *cache, const spiral_round_mat
     material_k(cache->k, m, r);
     for (int i = 0; i < 5; ++i) {
         cache->s_xor[i] = m->LM[i] ^ rotl32(m->SK[i + 5], (int)((r + (uint32_t)i + 1u) & 31u));
-        cache->alpha[i] = (uint8_t)((i + 1 + (int)r) % 5);
-        cache->beta[i]  = (uint8_t)((i + 3 + (int)r) % 5);
-        cache->rot_a[i] = (uint8_t)((((int)r * 3 + i * 5 + 1) & 31) | 1);
-        cache->rot_b[i] = (uint8_t)((((int)r * 5 + i * 3 + 7) & 31) | 1);
     }
 }
 
@@ -341,10 +333,6 @@ static void atcg_spiral_mix_v2(uint32_t T[5], const spiral_round_material_t *m, 
     T[4] = U[4] ^ mix32(U[2] + rs + m->LM[9]);
 }
 
-static inline int atcg_alpha(int i, uint32_t r) { return (i + 1 + (int)r) % 5; }
-static inline int atcg_beta (int i, uint32_t r) { return (i + 3 + (int)r) % 5; }
-static inline int atcg_rot_a(int i, uint32_t r) { return (((int)r * 3 + i * 5 + 1) & 31) | 1; }
-static inline int atcg_rot_b(int i, uint32_t r) { return (((int)r * 5 + i * 3 + 7) & 31) | 1; }
 
 spiral_status_t spiral_atcg_init_session(spiral_atcg_ctx_t *ctx, const uint8_t master_seed[32], const uint8_t nonce[16], const uint8_t session_id[16], uint32_t rounds, spiral_atcg_policy_t policy) {
     if (!ctx) return SPIRAL_ATCG_ERR_NULL;
@@ -361,57 +349,48 @@ spiral_status_t spiral_atcg_init_session(spiral_atcg_ctx_t *ctx, const uint8_t m
     return SPIRAL_ATCG_OK;
 }
 
+/* H_r is not required to be invertible. Both directions evaluate exactly
+ * this function, using the right half of the forward input. */
+static void feistel_function(uint32_t T[5], const uint32_t right[5], const spiral_round_material_t *m, const spiral_round_cache_t *cache, uint32_t r) {
+    uint32_t S[5], X[5], f1[5], f2[5];
+    for (int i = 0; i < 5; ++i) S[i] = right[i] ^ cache->s_xor[i];
+    atcg_dual_input(X, S, m, r);
+    atcg_F1(f1, X, cache->k, m, r);
+    atcg_F2(f2, X, cache->k, m, r);
+    for (int i = 0; i < 5; ++i) {
+        T[i] = f1[i] ^ f2[i] ^ m->CD[(i + (int)r) % ATCG_WORDS];
+        T[i] ^= rotl32(T[i], ((T[i] ^ r ^ m->RC[i]) & 31u) | 1u);
+        T[i] += rotl32(T[i] ^ m->SK[(i + 2) % ATCG_WORDS], (((int)r + i * 7) & 31) | 1);
+    }
+    atcg_spiral_mix_v2(T, m, r);
+}
+
+/* Balanced Feistel: (L, R) -> (R, L XOR H_r(R)).
+ * No additional final swap is applied after the last round. */
 static void spiral_round(uint32_t s[ATCG_WORDS], const spiral_round_material_t *m, const spiral_round_cache_t *cache, uint32_t r) {
-    uint32_t L[5], Rr[5], S[5], X[5], f1[5], f2[5], T[5];
-    uint32_t YL[5], YR[5], NL[5], NR[5];
-    for (int i = 0; i < 5; ++i) { L[i] = s[i]; Rr[i] = s[i + 5]; S[i] = L[i] ^ Rr[i]; }
-    for (int i = 0; i < 5; ++i) S[i] ^= cache->s_xor[i];
-    atcg_dual_input(X, S, m, r);
-    atcg_F1(f1, X, cache->k, m, r);
-    atcg_F2(f2, X, cache->k, m, r);
+    uint32_t T[5];
+    feistel_function(T, s + 5, m, cache, r);
     for (int i = 0; i < 5; ++i) {
-        T[i] = f1[i] ^ f2[i] ^ m->CD[(i + (int)r) % ATCG_WORDS];
-        T[i] ^= rotl32(T[i], ((T[i] ^ r ^ m->RC[i]) & 31u) | 1u);
-        T[i] += rotl32(T[i] ^ m->SK[(i + 2) % ATCG_WORDS], (((int)r + i * 7) & 31) | 1);
+        uint32_t left = s[i];
+        s[i] = s[i + 5];
+        s[i + 5] = left ^ T[i];
     }
-    atcg_spiral_mix_v2(T, m, r);
-    for (int i = 0; i < 5; ++i) { YL[i] = L[i] ^ T[i]; YR[i] = Rr[i] ^ T[i]; }
-    for (int i = 0; i < 5; ++i) {
-        NL[i] = rotl32(YR[cache->alpha[i]], cache->rot_a[i]);
-        NR[i] = rotr32(YL[cache->beta[i]], cache->rot_b[i]);
-    }
-    for (int i = 0; i < 5; ++i) { s[i] = NL[i]; s[i + 5] = NR[i]; }
 }
 
+/* Inverse: (L', R') -> (R' XOR H_r(L'), L'). */
 static void inv_spiral_round(uint32_t s[ATCG_WORDS], const spiral_round_material_t *m, const spiral_round_cache_t *cache, uint32_t r) {
-    uint32_t L[5], Rr[5], YL[5], YR[5], S[5], X[5], f1[5], f2[5], T[5];
-    for (int i = 0; i < 5; ++i) { L[i] = s[i]; Rr[i] = s[i + 5]; }
+    uint32_t T[5];
+    feistel_function(T, s, m, cache, r);
     for (int i = 0; i < 5; ++i) {
-        uint8_t ja = cache->alpha[i];
-        uint8_t jb = cache->beta[i];
-        YR[ja] = rotr32(L[i], cache->rot_a[i]);
-        YL[jb] = rotl32(Rr[i], cache->rot_b[i]);
+        uint32_t left = s[i];
+        s[i] = s[i + 5] ^ T[i];
+        s[i + 5] = left;
     }
-    for (int i = 0; i < 5; ++i) {
-        S[i] = YL[i] ^ YR[i];
-        S[i] ^= cache->s_xor[i];
-    }
-    atcg_dual_input(X, S, m, r);
-    atcg_F1(f1, X, cache->k, m, r);
-    atcg_F2(f2, X, cache->k, m, r);
-    for (int i = 0; i < 5; ++i) {
-        T[i] = f1[i] ^ f2[i] ^ m->CD[(i + (int)r) % ATCG_WORDS];
-        T[i] ^= rotl32(T[i], ((T[i] ^ r ^ m->RC[i]) & 31u) | 1u);
-        T[i] += rotl32(T[i] ^ m->SK[(i + 2) % ATCG_WORDS], (((int)r + i * 7) & 31) | 1);
-    }
-    atcg_spiral_mix_v2(T, m, r);
-    for (int i = 0; i < 5; ++i) { s[i] = YL[i] ^ T[i]; s[i + 5] = YR[i] ^ T[i]; }
 }
-
 
 /* Fixed 16-round fast scalar dispatch.
  * This is bit-exact: it removes the generic round loop for the default
- * 16-round profile and keeps the v2.2-strength round function unchanged.
+ * 16-round profile. It evaluates the same v2.2.5 rounds as the generic path.
  */
 #define ATCG_ROUND_ENC(S, R) spiral_round((S), &ctx->materials[(R)], &ctx->round_cache[(R)], (R))
 #define ATCG_ROUND_DEC(S, R) inv_spiral_round((S), &ctx->materials[(R)], &ctx->round_cache[(R)], (R))

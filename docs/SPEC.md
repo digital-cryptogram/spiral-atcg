@@ -312,23 +312,20 @@ Output:
 4. return state
 ```
 
-### 7.3 Decrypt correctness 來自 helicity rule
+### 7.3 Decrypt correctness：反向套用每輪的逆函數
 
-Decrypt 第 `r' = R-1-r` 輪呼叫 `ATCG_TranscribeRound(S_main, S_var, r')`，內部 `ATCG_Pair` 算 `j = R - 1 - r' = R - 1 - (R - 1 - r) = r`，所以 pair 變成：
+解密必須以 `R-1,...,0` 的順序，使用加密對應輪數的相同材料，套用 `InvSpiralRound`。Helicity 規則只決定每輪材料如何配對；它本身不是解密正確性證明。
 
+先前文字把 `(main[R-1-r], var[r])` 當作 `(main[r], var[R-1-r])` 交換兩個元素，這一般不成立。Pair symmetry 是固定 round/paired_round 下交換實際 `x/y` 參照的性質，不能用索引反轉取代。
+
+v2.2.5 的 substrate 是 balanced Feistel：
+
+```text
+加密：(L,R) -> (R, L XOR H_r(R))
+解密：(L',R') -> (R' XOR H_r(L'), L')
 ```
-P_{r'} = ( S_main[R-1-r], S_var[r] )
-```
 
-而 encrypt 第 `r` 輪的 pair 是：
-
-```
-P_r = ( S_main[r], S_var[R-1-r] )
-```
-
-兩個 pair **使用了同樣兩個 strand 元素**，只是 first/second 位置交換。如果 `Extract_*` 跟 `Produce_*` 函數對 pair 的兩個位置 **對稱**（i.e., 不依賴 first/second 區分），那麼 decrypt 第 `r'` 輪產生的 round material 跟 encrypt 第 `r` 輪產生的相同。這是 decrypt round-trip 正確性的結構基礎。
-
-> **Spec invariant**: `Extract_*` 跟 `Produce_*` 必須 **pair-symmetric**。實作必須驗證這個性質，否則 helicity rule 失效。
+由 `L'=R` 可直接重算相同的 `H_r(R)`，不需反演 `H_r`。具體規格見 [SUBSTRATE.md](SUBSTRATE.md)。
 
 ---
 
@@ -394,7 +391,7 @@ NULL policy 對應之前的 REAL_V2 backend：把 ATCG transcription 的整體�
 
 ## 12. Paper-ready contribution statement
 
-> We present **Spiral-ATCG**, a material-driven 320-bit block cipher organized under the ATCG meta-material model. The model defines: (1) a four-letter material alphabet `Σ_ATCG = {A, T, C, G}` with semantic roles anchor / twist / couple / gate; (2) a complement rule `A↔T, C↔G` with policy-defined compatibility; (3) an antiparallel helicity rule `H(r) = R - 1 - r` pairing round `r` on the main strand with round `R - 1 - r` on the variable strand; and (4) typed production rules `LM := A`, `RC := T ∘ C`, `CD := C ∘ A`, `SK := G` that deterministically transcribe paired ATCG strands into concrete round materials. We instantiate Spiral-ATCG under the BASE transcription policy as the primary research line, with NULL / SAFE / AGGR policies as engineering baseline and design-space candidates. Decryption correctness follows directly from the helicity rule combined with `Extract` / `Produce` pair-symmetry, without requiring inverse round components.
+> We present **Spiral-ATCG**, a material-driven 320-bit block cipher organized under the ATCG meta-material model. The model defines: (1) a four-letter material alphabet `Σ_ATCG = {A, T, C, G}` with semantic roles anchor / twist / couple / gate; (2) a complement rule `A↔T, C↔G` with policy-defined compatibility; (3) an antiparallel helicity rule `H(r) = R - 1 - r` pairing round `r` on the main strand with round `R - 1 - r` on the variable strand; and (4) typed production rules `LM := A`, `RC := T ∘ C`, `CD := C ∘ A`, `SK := G` that deterministically transcribe paired ATCG strands into concrete round materials. We instantiate Spiral-ATCG under the BASE transcription policy as the primary research line, with NULL / SAFE / AGGR policies as engineering baseline and design-space candidates. Decryption applies the substrate inverse rounds in reverse order with the same per-round materials. Pair symmetry is a separate property of material extraction.
 
 ---
 
@@ -556,3 +553,14 @@ Current QRES output:
 ```text
 docs/spiral_atcg_qres_v2_2_strength_comparison.csv
 ```
+
+
+## 18. Implementation update — v2.2.5-feistel-research
+
+Current implementation: 320-bit block, 256-bit master seed, 16 default rounds,
+1–32 supported experimental round counts. ATCG projection/transcription and the
+engineering KDF are unchanged. The substrate now uses a balanced Feistel round;
+see [SUBSTRATE.md](SUBSTRATE.md), [CHANGELOG_v2.2.5.md](CHANGELOG_v2.2.5.md),
+and [VALIDATION_v2.2.5.md](VALIDATION_v2.2.5.md).
+Ciphertexts and public context layout are not compatible with v2.2.4.
+Sections 16–17 describe historical implementations, not current security results.

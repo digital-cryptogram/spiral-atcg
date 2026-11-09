@@ -1,0 +1,7 @@
+Spiral-ATCG v2.2.5-feistel-research thorough avalanche probe
+8 tuples x 320 plaintext bit positions = 2560 cells per policy
+
+[BASE]  cells=2560  avg_hd=160.25  min=127  max=193  all-10-lanes=100.00%  zero-diff=0
+[SAFE]  cells=2560  avg_hd=159.69  min=130  max=190  all-10-lanes=100.00%  zero-diff=0
+[AGGR]  cells=2560  avg_hd=159.96  min=129  max=193  all-10-lanes=100.00%  zero-diff=0
+[NULL]  cells=2560  avg_hd=160.20  min=130  max=191  all-10-lanes=100.00%  zero-diff=0

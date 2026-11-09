@@ -1,0 +1,2 @@
+FROZEN KAT MISMATCH: TV1 policy=BASE
+Exit status: 1 (expected 1; one frozen ciphertext byte changed)

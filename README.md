@@ -3,13 +3,17 @@
 [![CI](https://github.com/digital-cryptogram/spiral-atcg/actions/workflows/ci.yml/badge.svg)](https://github.com/digital-cryptogram/spiral-atcg/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Spec](https://img.shields.io/badge/spec-v2.0-blue)](docs/SPEC.md)
-[![Reference impl](https://img.shields.io/badge/reference-v2.2.4-green)](src/spiral_atcg.c)
+[![Reference impl](https://img.shields.io/badge/reference-v2.2.5-green)](src/spiral_atcg.c)
 
 > An open experimental research framework for grammar-driven round-material generation in word-oriented symmetric constructions.
 >
 > This repository is a **public review artifact**. It is not proposed as a standard-ready cipher, an AES replacement, or a production cryptographic primitive.
 >
 > Open cryptographic research from **[Digital Cryptogram (數位密碼科技)](https://www.digitalcryptogram.com.tw/)**.
+
+> **v2.2.5 security revision:** the substrate now uses `(L,R) -> (R,L XOR H_r(R))` to remove the known v2.2.4 simultaneous-mask invariants. Ciphertexts and context layout are incompatible with v2.2.4. See [release notes](docs/CHANGELOG_v2.2.5.md) and [validation](docs/VALIDATION_v2.2.5.md). This remains experimental: the engineering KDF is unchanged, and no AES-256 superiority or quantum-security level is claimed.
+>
+> **v2.2.5 安全修訂：** 已更換輪結構並加入已知弱點回歸測試；密文及 context 結構與 v2.2.4 不相容。這是研究版本，尚未建立 AES-256 等級或量子安全強度。
 
 ---
 
@@ -35,10 +39,10 @@ The analogy to nucleotide pairing in DNA is intentional as terminology, but it i
 Concretely, the project provides:
 
 - A **specification** ([`docs/SPEC.md`](docs/SPEC.md)) of the ATCG material model, including alphabet, complement rule, antiparallel helicity, a three-step transcription pipeline, and named transcription policies (`BASE`, `SAFE`, `AGGR`, `NULL`).
-- A **reference substrate**, Spiral-ATCG/v2.2.4, instantiating the framework as a 320-bit word-oriented experimental construction with 16 rounds and selectable transcription policies.
+- A **reference substrate**, Spiral-ATCG/v2.2.5, instantiating the framework as a 320-bit word-oriented experimental construction with 16 rounds and selectable transcription policies.
 - A **portable C reference implementation** ([`src/spiral_atcg.c`](src/spiral_atcg.c)) under 700 lines, building on Linux / macOS / Windows (MinGW).
 - **Regression and structural-analysis probes** covering correctness, diffusion sanity, policy behaviour, reduced-round behaviour, and additional structural checks.
-- **Reproducible test vectors** ([`docs/KAT.md`](docs/KAT.md), 5 scenarios × 4 policies = 20 entries) and a deterministic structural-probe dataset ([`docs/QRES_data.csv`](docs/QRES_data.csv), 72 rows).
+- **Reproducible test vectors** ([`docs/KAT.md`](docs/KAT.md), 5 scenarios × 4 policies = 20 entries) and a current diffusion-probe dataset ([`docs/QRES_v2.2.5.csv`](docs/QRES_v2.2.5.csv), 72 rows).
 - A **benchmark harness** with high-resolution timing, multiple optimization levels, and per-policy reporting.
 
 ### What this is *not*
@@ -48,7 +52,7 @@ Honest scope so this work is judged correctly:
 - **Not a finalized standard and not certified.** No FIPS 140-3, PCI DSS, Common Criteria, or NIST validation is claimed.
 - **Not a security proof.** No IND-CPA, IND-CCA, AEAD, PRP, QROM, or post-quantum security theorem is claimed.
 - **Not a replacement for AES or any NIST-approved primitive.** Spiral-ATCG is a research artifact for analysis and experimentation, not a default deployment choice.
-- **Not a post-quantum cipher in the technical sense.** Post-quantum security normally refers to public-key constructions; symmetric constructions are usually discussed through key size, generic search cost, and the Grover bound.
+- **No established post-quantum security level.** Symmetric constructions can be analyzed in post-quantum models; key length and a generic Grover estimate do not establish resistance to structural attacks.
 - **Not a claim that the tests prove security.** The included tests are regression and structural-health checks. They are useful for reproducibility and for identifying obvious failures, but they do not replace independent cryptanalysis.
 
 ### Why publish this
@@ -76,7 +80,7 @@ git clone https://github.com/digital-cryptogram/spiral-atcg.git
 cd spiral-atcg
 make all          # build library + standard tests + KAT generator + benchmark
 make test         # run roundtrip + pair-symmetry + avalanche + batch API tests
-make full         # build + run heavier probes
+make full         # build heavier probes; run make thorough / make qres separately
 make bench        # run the high-resolution benchmark
 ```
 
@@ -87,10 +91,16 @@ ROUNDTRIP PASSED policy=BASE / SAFE / AGGR / NULL
 PAIR SYMMETRY PASSED policy=BASE / SAFE / AGGR / NULL
 ALL AVALANCHE TESTS PASSED
 BATCH API PASSED policy=BASE / SAFE / AGGR / NULL
+V2.2.5 REGRESSION PASSED policy=BASE / SAFE / AGGR / NULL
+AFFINE RANK PASSED policy=BASE / SAFE / AGGR / NULL
+FAST/GENERIC PATHS PASSED
+ALL 20 FROZEN KAT ENTRIES MATCHED
 ALL 20 KAT ENTRIES PASSED ROUNDTRIP
 ```
 
-### Probe summary at a glance
+### Historical v2.2.4 probe summary
+
+The following table describes the previous version, not v2.2.5 validation. Those probes missed the full-round invariants found on 2026-11-09. See [the reassessment](docs/REASSESSMENT_v2.2.4.zh-TW.md) and [current validation](docs/VALIDATION_v2.2.5.md).
 
 | Battery | Probes | Scope | Result |
 |---|---:|---|---|
@@ -125,7 +135,7 @@ For different readers:
 - **First-time visitor:** read this README, then [`docs/SPEC.md`](docs/SPEC.md) §1–§7.
 - **Cryptology reviewer:** [`docs/SPEC.md`](docs/SPEC.md) → [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) → [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md) → [`docs/QRES_summary.md`](docs/QRES_summary.md).
 - **Implementer:** [`docs/SPEC.md`](docs/SPEC.md) → [`include/spiral_atcg.h`](include/spiral_atcg.h) → [`src/spiral_atcg.c`](src/spiral_atcg.c) → [`docs/KAT.md`](docs/KAT.md).
-- **Performance reviewer:** build with `make bench` and read [`docs/CHANGELOG_v2.2.4.md`](docs/CHANGELOG_v2.2.4.md).
+- **Performance reviewer:** build with `make bench` and read [`docs/CHANGELOG_v2.2.5.md`](docs/CHANGELOG_v2.2.5.md).
 
 ### Historical documentation note
 
@@ -182,10 +192,10 @@ DNA 鹼基配對的類比是有意採用的術語，但它是非正式 metaphor�
 具體而言，本專案提供：
 
 - ATCG material model 的**規格文件** ([`docs/SPEC.md`](docs/SPEC.md))，包含 alphabet、complement rule、antiparallel helicity、三段 transcription pipeline，以及命名 transcription policies (`BASE`、`SAFE`、`AGGR`、`NULL`)。
-- **參考 substrate** Spiral-ATCG/v2.2.4，將框架實例化為 320-bit word-oriented experimental construction，包含 16 rounds 與可選 transcription policies。
+- **參考 substrate** Spiral-ATCG/v2.2.5，將框架實例化為 320-bit word-oriented experimental construction，包含 16 rounds 與可選 transcription policies。
 - 一份不到 700 行的**可攜式 C 參考實作** ([`src/spiral_atcg.c`](src/spiral_atcg.c))，可在 Linux / macOS / Windows (MinGW) 上編譯。
 - **Regression 與 structural-analysis probes**，涵蓋 correctness、diffusion sanity、policy behaviour、reduced-round behaviour 與其他結構性檢查。
-- **可重現測試向量** ([`docs/KAT.md`](docs/KAT.md)，5 scenarios × 4 policies = 20 entries) 與確定性 structural-probe dataset ([`docs/QRES_data.csv`](docs/QRES_data.csv)，72 rows)。
+- **可重現測試向量** ([`docs/KAT.md`](docs/KAT.md)，5 scenarios × 4 policies = 20 entries) 與新版 diffusion-probe dataset ([`docs/QRES_v2.2.5.csv`](docs/QRES_v2.2.5.csv)，72 rows)。
 - **效能基準測試框架**，使用高解析度 timer、多種 optimization level 與 per-policy reporting。
 
 ### 這不是什麼
@@ -195,7 +205,7 @@ DNA 鹼基配對的類比是有意採用的術語，但它是非正式 metaphor�
 - **不是已完成標準，也未取得認證。** 不宣稱 FIPS 140-3、PCI DSS、Common Criteria 或 NIST validation。
 - **不是 security proof。** 不宣稱 IND-CPA、IND-CCA、AEAD、PRP、QROM 或 post-quantum security theorem。
 - **不是 AES 或任何 NIST-approved primitive 的取代品。** Spiral-ATCG 是分析與實驗用研究 artifact，不是預設部署選項。
-- **嚴格意義上不是後量子 cipher。** 後量子安全通常指公開金鑰構造；對稱式構造通常透過 key size、generic search cost 與 Grover bound 討論。
+- **尚未建立後量子安全等級。** 對稱密碼也能分析後量子安全，但金鑰長度與通用 Grover 估計不能排除結構攻擊。
 - **不宣稱測試結果證明安全。** 內含測試是 regression 與 structural-health checks，可用於重現與發現明顯失敗，但不能取代獨立密碼分析。
 
 ### 為什麼開源
@@ -223,7 +233,7 @@ git clone https://github.com/digital-cryptogram/spiral-atcg.git
 cd spiral-atcg
 make all          # 編譯 library + 標準測試 + KAT 產生器 + benchmark
 make test         # 跑 roundtrip + pair-symmetry + avalanche + batch API 測試
-make full         # 編譯並執行較重的 probes
+make full         # 編譯較重的 probes；另執行 make thorough / make qres
 make bench        # 跑高解析度 benchmark
 ```
 
@@ -234,10 +244,16 @@ ROUNDTRIP PASSED policy=BASE / SAFE / AGGR / NULL
 PAIR SYMMETRY PASSED policy=BASE / SAFE / AGGR / NULL
 ALL AVALANCHE TESTS PASSED
 BATCH API PASSED policy=BASE / SAFE / AGGR / NULL
+V2.2.5 REGRESSION PASSED policy=BASE / SAFE / AGGR / NULL
+AFFINE RANK PASSED policy=BASE / SAFE / AGGR / NULL
+FAST/GENERIC PATHS PASSED
+ALL 20 FROZEN KAT ENTRIES MATCHED
 ALL 20 KAT ENTRIES PASSED ROUNDTRIP
 ```
 
-### Probe 結果一覽
+### v2.2.4 歷史 Probe 結果
+
+下表屬於舊版，不能作為 v2.2.5 驗證。舊探針未抓到 2026-11-09 發現的全輪數不變量；請讀[重新評估](docs/REASSESSMENT_v2.2.4.zh-TW.md)與[新版驗證](docs/VALIDATION_v2.2.5.md)。
 
 | Battery | Probe 數 | Scope | 結果 |
 |---|---:|---|---|
@@ -272,7 +288,7 @@ spiral-atcg/
 - **第一次來訪：** 讀本 README，再看 [`docs/SPEC.md`](docs/SPEC.md) §1–§7。
 - **Cryptology reviewer：** [`docs/SPEC.md`](docs/SPEC.md) → [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) → [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md) → [`docs/QRES_summary.md`](docs/QRES_summary.md)。
 - **實作者：** [`docs/SPEC.md`](docs/SPEC.md) → [`include/spiral_atcg.h`](include/spiral_atcg.h) → [`src/spiral_atcg.c`](src/spiral_atcg.c) → [`docs/KAT.md`](docs/KAT.md)。
-- **效能審查者：** 用 `make bench` 編譯後執行，並參閱 [`docs/CHANGELOG_v2.2.4.md`](docs/CHANGELOG_v2.2.4.md)。
+- **效能審查者：** 用 `make bench` 編譯後執行，並參閱 [`docs/CHANGELOG_v2.2.5.md`](docs/CHANGELOG_v2.2.5.md)。
 
 ### 歷史文件說明
 

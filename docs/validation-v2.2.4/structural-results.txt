@@ -1,0 +1,11 @@
+Example BASE, 16 rounds, delta=55 repeated 40 bytes
+P  = 01f3b7f729d35a681e7300b3f1f1fdc55b3c81a08cb86c19fe751940461606321e0b8255df4f4923
+C  = a8f03744475005b23734e2314588cd5d4b0f97dda585c92c57f52be96b6c636fe9e56c175030d7a4
+P' = 54a6e2a27c860f3d4b2655e6a4a4a8900e69d4f5d9ed394cab204c15134353674b5ed7008a1a1c76
+C' = fda56211120550e76261b76410dd98081e5ac288f0d09c7902a07ebc3e39363abcb03942056582f1
+parity_even(P,C)=1,1 parity_odd(P,C)=0,0
+BASE rounds=1..32 sessions_per_round=4 samples_per_session=32 parity=4096/4096 differential=12288/12288 roundtrip=4096/4096
+SAFE rounds=1..32 sessions_per_round=4 samples_per_session=32 parity=4096/4096 differential=12288/12288 roundtrip=4096/4096
+AGGR rounds=1..32 sessions_per_round=4 samples_per_session=32 parity=4096/4096 differential=12288/12288 roundtrip=4096/4096
+NULL rounds=1..32 sessions_per_round=4 samples_per_session=32 parity=4096/4096 differential=12288/12288 roundtrip=4096/4096
+REPRODUCED: parity_pairs=16384 deterministic_differentials=49152 roundtrips=16384

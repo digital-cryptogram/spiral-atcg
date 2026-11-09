@@ -22,29 +22,38 @@ int main(void) {
     fill(in, sizeof(in), 0x64);
 
     for (size_t pi = 0; pi < sizeof(policies)/sizeof(policies[0]); ++pi) {
-        spiral_atcg_ctx_t ctx;
-        spiral_status_t st = spiral_atcg_init_session(&ctx, master, nonce, sid, SPIRAL_ATCG_DEFAULT_ROUNDS, policies[pi]);
-        if (st != SPIRAL_ATCG_OK) { printf("init failed policy=%s st=%d\n", spiral_atcg_policy_name(policies[pi]), st); return 1; }
+        for (unsigned rounds = 1; rounds <= SPIRAL_ATCG_MAX_ROUNDS; ++rounds) {
+            spiral_atcg_ctx_t ctx;
+            spiral_status_t st = spiral_atcg_init_session(&ctx, master, nonce, sid, rounds, policies[pi]);
+            if (st != SPIRAL_ATCG_OK) { printf("init failed policy=%s st=%d\n", spiral_atcg_policy_name(policies[pi]), st); return 1; }
 
-        st = spiral_atcg_encrypt_blocks(&ctx, in, batch_ct, BLOCKS);
-        if (st != SPIRAL_ATCG_OK) { printf("batch encrypt failed policy=%s st=%d\n", spiral_atcg_policy_name(policies[pi]), st); return 1; }
-        st = spiral_atcg_decrypt_blocks(&ctx, batch_ct, batch_pt, BLOCKS);
-        if (st != SPIRAL_ATCG_OK) { printf("batch decrypt failed policy=%s st=%d\n", spiral_atcg_policy_name(policies[pi]), st); return 1; }
+            st = spiral_atcg_encrypt_blocks(&ctx, in, batch_ct, BLOCKS);
+            if (st != SPIRAL_ATCG_OK) { printf("batch encrypt failed policy=%s st=%d\n", spiral_atcg_policy_name(policies[pi]), st); return 1; }
+            st = spiral_atcg_decrypt_blocks(&ctx, batch_ct, batch_pt, BLOCKS);
+            if (st != SPIRAL_ATCG_OK) { printf("batch decrypt failed policy=%s st=%d\n", spiral_atcg_policy_name(policies[pi]), st); return 1; }
 
-        for (size_t b = 0; b < BLOCKS; ++b) {
-            st = spiral_atcg_encrypt_block(&ctx, in + b * SPIRAL_ATCG_BLOCK_BYTES, single_ct + b * SPIRAL_ATCG_BLOCK_BYTES);
-            if (st != SPIRAL_ATCG_OK) return 1;
-            st = spiral_atcg_decrypt_block(&ctx, single_ct + b * SPIRAL_ATCG_BLOCK_BYTES, single_pt + b * SPIRAL_ATCG_BLOCK_BYTES);
-            if (st != SPIRAL_ATCG_OK) return 1;
-        }
+            for (size_t b = 0; b < BLOCKS; ++b) {
+                st = spiral_atcg_encrypt_block(&ctx, in + b * SPIRAL_ATCG_BLOCK_BYTES, single_ct + b * SPIRAL_ATCG_BLOCK_BYTES);
+                if (st != SPIRAL_ATCG_OK) return 1;
+                st = spiral_atcg_decrypt_block(&ctx, single_ct + b * SPIRAL_ATCG_BLOCK_BYTES, single_pt + b * SPIRAL_ATCG_BLOCK_BYTES);
+                if (st != SPIRAL_ATCG_OK) return 1;
+            }
 
-        if (memcmp(batch_ct, single_ct, sizeof(batch_ct)) != 0) {
-            printf("BATCH ENCRYPT MISMATCH policy=%s\n", spiral_atcg_policy_name(policies[pi])); return 1;
+            if (memcmp(batch_ct, single_ct, sizeof(batch_ct)) != 0) {
+                printf("BATCH ENCRYPT MISMATCH policy=%s\n", spiral_atcg_policy_name(policies[pi])); return 1;
+            }
+            if (memcmp(batch_pt, in, sizeof(in)) != 0 || memcmp(single_pt, in, sizeof(in)) != 0) {
+                printf("BATCH ROUNDTRIP MISMATCH policy=%s\n", spiral_atcg_policy_name(policies[pi])); return 1;
+            }
+            memcpy(batch_pt, in, sizeof(in));
+            if (spiral_atcg_encrypt_blocks(&ctx, batch_pt, batch_pt, BLOCKS) != SPIRAL_ATCG_OK ||
+                memcmp(batch_pt, single_ct, sizeof(batch_pt))) return 1;
+            if (spiral_atcg_decrypt_blocks(&ctx, batch_pt, batch_pt, BLOCKS) != SPIRAL_ATCG_OK ||
+                memcmp(batch_pt, in, sizeof(batch_pt))) return 1;
+            if (spiral_atcg_encrypt_blocks(&ctx, NULL, NULL, 0) != SPIRAL_ATCG_OK ||
+                spiral_atcg_decrypt_blocks(&ctx, NULL, NULL, 0) != SPIRAL_ATCG_OK) return 1;
         }
-        if (memcmp(batch_pt, in, sizeof(in)) != 0 || memcmp(single_pt, in, sizeof(in)) != 0) {
-            printf("BATCH ROUNDTRIP MISMATCH policy=%s\n", spiral_atcg_policy_name(policies[pi])); return 1;
-        }
-        printf("BATCH API PASSED policy=%s\n", spiral_atcg_policy_name(policies[pi]));
+        printf("BATCH API PASSED policy=%s rounds=1..32 including in-place/empty\n", spiral_atcg_policy_name(policies[pi]));
     }
     printf("ALL BATCH API TESTS PASSED\n");
     return 0;

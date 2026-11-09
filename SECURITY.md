@@ -1,5 +1,15 @@
 # Security Policy
 
+## Current version and known limitations
+
+v2.2.5 replaces the v2.2.4 round structure after full-round affine parity leaks
+and probability-one differentials were found. See [release notes](docs/CHANGELOG_v2.2.5.md)
+and [validation](docs/VALIDATION_v2.2.5.md). Removal of those known relations is
+not a security proof: the engineering KDF, independent cryptanalysis, quantum
+attack costs, side-channel resistance and a complete authenticated encryption
+mode remain outside this release's assurances. Old ciphertexts require the old
+version; the raw API has no automatic format/version detection.
+
 ## Project status and scope
 
 Spiral-ATCG is **research-grade cryptography**. Please read this carefully before using or evaluating it.

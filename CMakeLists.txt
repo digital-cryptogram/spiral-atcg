@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-project(spiral_atcg_v2_2_3_scalarized_round C)
+project(spiral_atcg VERSION 2.2.5 LANGUAGES C)
+include(CTest)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -52,3 +53,16 @@ target_link_libraries(test_adv_c1_distinct PRIVATE spiral_atcg m)
 
 add_executable(test_adv_c3_distinct tests/test_adv_c3_distinct.c)
 target_link_libraries(test_adv_c3_distinct PRIVATE spiral_atcg m)
+
+add_executable(test_v225_regressions tests/test_v225_regressions.c)
+target_link_libraries(test_v225_regressions PRIVATE spiral_atcg)
+add_executable(test_round_paths tests/test_round_paths.c)
+target_include_directories(test_round_paths PRIVATE include)
+add_executable(test_affine_rank tests/test_affine_rank.c)
+target_link_libraries(test_affine_rank PRIVATE spiral_atcg)
+if(BUILD_TESTING)
+    foreach(test_name IN ITEMS test_roundtrip test_pair_symmetry test_avalanche
+            test_batch_api kat_generator test_v225_regressions test_round_paths test_affine_rank)
+        add_test(NAME ${test_name} COMMAND ${test_name})
+    endforeach()
+endif()

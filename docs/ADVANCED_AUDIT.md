@@ -1,5 +1,7 @@
 # Spiral-ATCG v2.2.4 Advanced Cryptanalytic Report
 
+> Historical v2.2.4 record, not v2.2.5 validation. Full-round structural weaknesses were subsequently found; see [reassessment](REASSESSMENT_v2.2.4.zh-TW.md) and [v2.2.5 validation](VALIDATION_v2.2.5.md).
+
 **Companion to**: `spiral_atcg_v224_security_report.md`
 **Target**: `spiral_atcg_v2_2_4_full_scalar_cleanup_project`
 **Scope**: Quantum walk indicators (3 probes) + Boomerang distinguisher (3 probes) + Algebraic attacks (4 probes) = **10 advanced probes**, plus 2 follow-up probes correcting design issues.

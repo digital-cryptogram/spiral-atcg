@@ -1,5 +1,7 @@
 # Spiral-ATCG v2.2.4 Security and Quantum-Resistance Report
 
+> Historical v2.2.4 record, not v2.2.5 validation. Full-round structural weaknesses were subsequently found; see [reassessment](REASSESSMENT_v2.2.4.zh-TW.md) and [v2.2.5 validation](VALIDATION_v2.2.5.md).
+
 **Target**: `spiral_atcg_v2_2_4_full_scalar_cleanup_project`
 **Cipher**: Spiral-ATCG v2.2-strength substrate, v2.2.4 implementation cleanup
 **Scope**: Bundled correctness tests (8) + extended security battery (8 probes) + quantum-resistance battery (6 probes)

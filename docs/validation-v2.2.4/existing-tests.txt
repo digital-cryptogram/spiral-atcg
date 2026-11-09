@@ -1,0 +1,95 @@
+mkdir -p build
+cc -O0 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude -c src/spiral_atcg.c -o build/spiral_atcg.o
+src/spiral_atcg.c:344:19: warning: unused function 'atcg_alpha' [-Wunused-function]
+  344 | static inline int atcg_alpha(int i, uint32_t r) { return (i + 1 + (int)r) % 5; }
+      |                   ^~~~~~~~~~
+src/spiral_atcg.c:345:19: warning: unused function 'atcg_beta' [-Wunused-function]
+  345 | static inline int atcg_beta (int i, uint32_t r) { return (i + 3 + (int)r) % 5; }
+      |                   ^~~~~~~~~
+src/spiral_atcg.c:346:19: warning: unused function 'atcg_rot_a' [-Wunused-function]
+  346 | static inline int atcg_rot_a(int i, uint32_t r) { return (((int)r * 3 + i * 5 + 1) & 31) | 1; }
+      |                   ^~~~~~~~~~
+src/spiral_atcg.c:347:19: warning: unused function 'atcg_rot_b' [-Wunused-function]
+  347 | static inline int atcg_rot_b(int i, uint32_t r) { return (((int)r * 5 + i * 3 + 7) & 31) | 1; }
+      |                   ^~~~~~~~~~
+4 warnings generated.
+ar rv build/libspiral_atcg.a build/spiral_atcg.o
+ar: creating archive build/libspiral_atcg.a
+a - build/spiral_atcg.o
+cc -O0 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude tests/test_roundtrip.c build/libspiral_atcg.a -o build/test_roundtrip
+cc -O0 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude tests/test_pair_symmetry.c build/libspiral_atcg.a -o build/test_pair_symmetry
+cc -O0 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude tests/test_avalanche.c build/libspiral_atcg.a -o build/test_avalanche
+cc -O0 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude tests/test_batch_api.c build/libspiral_atcg.a -o build/test_batch_api
+cc -O0 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Iinclude tests/kat_generator.c build/libspiral_atcg.a -o build/kat_generator
+./build/test_roundtrip
+ROUNDTRIP PASSED policy=BASE
+ROUNDTRIP PASSED policy=SAFE
+ROUNDTRIP PASSED policy=AGGR
+ROUNDTRIP PASSED policy=NULL
+ALL V2 ROUNDTRIPS PASSED
+./build/test_pair_symmetry
+PAIR SYMMETRY PASSED policy=BASE
+PAIR SYMMETRY PASSED policy=SAFE
+PAIR SYMMETRY PASSED policy=AGGR
+PAIR SYMMETRY PASSED policy=NULL
+ALL PAIR SYMMETRY TESTS PASSED
+./build/test_avalanche
+AVALANCHE policy=BASE
+  lane 0 hd=13
+  lane 1 hd=14
+  lane 2 hd=17
+  lane 3 hd=22
+  lane 4 hd=11
+  lane 5 hd=15
+  lane 6 hd=18
+  lane 7 hd=20
+  lane 8 hd=15
+  lane 9 hd=16
+  total_hd=161 active_lanes=10/10
+AVALANCHE policy=SAFE
+  lane 0 hd=12
+  lane 1 hd=11
+  lane 2 hd=18
+  lane 3 hd=14
+  lane 4 hd=11
+  lane 5 hd=17
+  lane 6 hd=18
+  lane 7 hd=21
+  lane 8 hd=20
+  lane 9 hd=19
+  total_hd=161 active_lanes=10/10
+AVALANCHE policy=AGGR
+  lane 0 hd=19
+  lane 1 hd=19
+  lane 2 hd=23
+  lane 3 hd=14
+  lane 4 hd=16
+  lane 5 hd=22
+  lane 6 hd=21
+  lane 7 hd=16
+  lane 8 hd=15
+  lane 9 hd=12
+  total_hd=177 active_lanes=10/10
+AVALANCHE policy=NULL
+  lane 0 hd=16
+  lane 1 hd=15
+  lane 2 hd=15
+  lane 3 hd=18
+  lane 4 hd=16
+  lane 5 hd=19
+  lane 6 hd=8
+  lane 7 hd=12
+  lane 8 hd=15
+  lane 9 hd=15
+  total_hd=149 active_lanes=10/10
+ALL AVALANCHE TESTS PASSED
+./build/test_batch_api
+BATCH API PASSED policy=BASE
+BATCH API PASSED policy=SAFE
+BATCH API PASSED policy=AGGR
+BATCH API PASSED policy=NULL
+ALL BATCH API TESTS PASSED
+./build/kat_generator >/tmp/spiral_atcg_kat_check.txt
+tail -2 /tmp/spiral_atcg_kat_check.txt
+ALL 20 KAT ENTRIES PASSED ROUNDTRIP
+ALL 5 SCENARIOS PASSED POLICY-DISTINCTNESS CHECK
