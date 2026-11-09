@@ -1,0 +1,2 @@
+AFFINE RANK FAIL policy=BASE session=0 rank=639/641
+Exit status: 2 (expected 2)

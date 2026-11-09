@@ -1,95 +1,77 @@
-# Spiral-ATCG v2.2-strength substrate upgrade
+# Spiral-ATCG v2.2.5 experimental Feistel substrate
 
-## Purpose
+This incompatible research revision replaces the v2.2.4 simultaneous-mask
+construction after exact full-round parity and differential relations were found.
+See [release notes](CHANGELOG_v2.2.5.md), [validation](VALIDATION_v2.2.5.md),
+and the [historical substrate](SUBSTRATE_v2.2.4.md).
 
-v2.2-strength keeps the ATCG v2.0 framework unchanged and replaces only the substrate round function.
+## Parameters and encoding
 
-The v2.1.1 core fixed the original fixed-pair diffusion bug by adding a round-dependent lane shuffle. However, reduced-round QRES still showed that the input probe reached ideal HD and all-lane diffusion around round 6. That was materially slower than the older Spiral-DNA-320 v1 substrate.
+- Block: 40 bytes, loaded as ten little-endian 32-bit words.
+- Master seed: 32 bytes; nonce and session ID: 16 bytes each.
+- Default: 16 rounds. The API accepts 1–32 for experiments; acceptance is not a
+  security recommendation for a reduced-round profile.
+- State: `L = words[0..4]`, `R = words[5..9]`.
+- Policies: BASE, SAFE, AGGR, NULL. Projection/transcription and the engineering
+  KDF are unchanged. `H_r` is determined by the session and round.
+- Helper arithmetic is modulo `2^32`; rotate counts are modulo 32.
 
-v2.2-strength therefore follows direction B from the Phase B framing review:
-
-```text
-ATCG framework stays.
-Substrate round is upgraded toward the v1 Spiral-DNA-320 diffusion structure.
-```
-
-## What changed
-
-The public ATCG functions are unchanged:
-
-```c
-spiral_atcg_project(...);
-spiral_atcg_pair(...);
-spiral_atcg_transcribe_round(...);
-spiral_atcg_precompute_materials(...);
-spiral_atcg_init_session(...);
-spiral_atcg_encrypt_block(...);
-spiral_atcg_decrypt_block(...);
-```
-
-The changed part is the internal `spiral_round()` / `inv_spiral_round()` implementation.
-
-v2.2-strength adds a v1-inspired reversible half-state substrate:
-
-1. Split state into `L[5]` and `R[5]`.
-2. Compute `S = L ^ R`.
-3. Inject ATCG material into the S path.
-4. Run round-dependent `dual_input()`.
-5. Run `F1` and `F2` with stride-3 / round-dependent lane selection.
-6. Mix `T = F1 ^ F2` through SpiralMix_v2-style butterfly.
-7. Apply round-dependent output twist using `alpha(i,r)` and `beta(i,r)`.
-8. Decrypt reverses the output twist, recomputes `T`, and unmasks `YL/YR`.
-
-## Why it stays invertible
-
-The round remains reversible because `T` is a deterministic function of:
+## Round and inverse
 
 ```text
-S = L ^ R
-round material LM/RC/CD/SK
-round index r
+Forward round r: (L, R)   -> (R, L XOR H_r(R))
+Inverse round r: (L', R') -> (R' XOR H_r(L'), L')
 ```
 
-During decrypt, after inverse output twist we recover:
+Encryption applies rounds `0..R-1`; decryption applies their inverses in order
+`R-1..0`. There is no additional swap after the final round. The final ten words
+are serialized in little-endian order.
+
+The forward left output equals the original right input, so the inverse can
+recompute the same `H_r`. No inverse of `H_r` is needed. This proves correctness,
+not pseudorandomness or security of the chosen `H_r`.
+
+## Definition of H_r
+
+`src/spiral_atcg.c:feistel_function` is the byte-level reference. It reuses the
+previous nonlinear helpers but changes the input from `L XOR R` to `R`:
 
 ```text
-YL = old_L ^ T
-YR = old_R ^ T
-YL ^ YR = old_L ^ old_R = S
+S[i] = R[i] XOR round_cache[r].s_xor[i]
+X = atcg_dual_input(S, material[r], r)
+f1 = atcg_F1(X, round_cache[r].k, material[r], r)
+f2 = atcg_F2(X, round_cache[r].k, material[r], r)
+for i = 0..4:
+    T[i] = f1[i] XOR f2[i] XOR CD[(i+r) mod 10]
+    T[i] = T[i] XOR ROTL32(T[i], ((T[i] XOR r XOR RC[i]) AND 31) OR 1)
+    T[i] = T[i] + ROTL32(T[i] XOR SK[(i+2) mod 10], ((r+7*i) AND 31) OR 1)
+H_r(R) = atcg_spiral_mix_v2(T, material[r], r)
 ```
 
-So decrypt can recompute the same `T` and recover:
+Each assignment uses the previous value on its right side. Only `k[5]` and
+`s_xor[5]` remain in the round cache. The old output twist and alpha/beta/rotation
+cache fields are removed. The unrolled 16-round path and generic path evaluate
+identical rounds; `test_round_paths` compares both directions.
 
-```text
-old_L = YL ^ T
-old_R = YR ^ T
-```
+## Security scope
 
-## Reduced-round QRES improvement
+The previous invariant proof no longer applies: only one half receives `H_r`,
+which is computed from the other half. Dedicated tests reject v2.2.4 and pass
+v2.2.5 for the sampled sessions. Full-rank witness matrices also exclude all exact
+affine plaintext/ciphertext relations for 16 tested full-round sessions.
 
-Generated v2.2-strength QRES CSV:
+This does not establish pseudorandomness of `H_r`, independence of round keys,
+resistance to biased or nonlinear attacks, a quantified 16-round security margin,
+side-channel resistance, or a quantum security level. A Feistel structure alone
+does not transfer ideal-round-function theorems to these helpers.
 
-```text
-docs/spiral_atcg_qres_v2_2_strength_comparison.csv
-```
+## Compatibility
 
-Input probe, averaged across BASE / SAFE / AGGR / NULL:
+All 20 ciphertext vectors change, as does context/cache layout. Recompile callers;
+do not serialize contexts or mix headers/libraries from different versions.
+Store an algorithm version in any external container or protocol. The raw API
+has neither version detection nor authentication: wrong-version decryption can
+return success and meaningless bytes. Recover old research ciphertexts with the
+matching historical implementation before re-encrypting.
 
-| rounds | avg HD mean | full-diffusion % |
-|---:|---:|---:|
-| 2 | ~159.89 | 100% |
-| 3 | ~159.97 | 100% |
-| 4 | ~160.00 | 100% |
-| 6 | ~160.07 | 100% |
-| 8 | ~159.95 | 100% |
-| 12 | ~159.99 | 100% |
-
-This restores reduced-round diffusion to the same class as the original v1 substrate. The 16-round profile is still retained as the default engineering safety budget.
-
-## Framing
-
-v2.2-strength should be framed as:
-
-> Spiral-ATCG is the meta-material / transcription framework. The substrate should not be intentionally weaker than the earlier Spiral-DNA-320 core. v2.2 therefore restores the stronger v1-style round-dependent diffusion structure while preserving the ATCG v2 production pipeline.
-
-This avoids the weaker v2.1.1 claim that slower round-6 diffusion was merely a design trade-off.
+This remains a block primitive, not an AEAD or a production encryption system.

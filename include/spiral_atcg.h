@@ -15,7 +15,7 @@ extern "C" {
 #define SPIRAL_ATCG_WORDS           10u
 #define SPIRAL_ATCG_MAX_ROUNDS      32u
 #define SPIRAL_ATCG_DEFAULT_ROUNDS  16u
-#define SPIRAL_ATCG_VERSION_STRING  "2.2.4-full-scalar-cleanup"
+#define SPIRAL_ATCG_VERSION_STRING  "2.2.5-feistel-research"
 
 typedef enum {
     SPIRAL_ATCG_OK = 0,
@@ -60,16 +60,12 @@ typedef struct {
     uint32_t SK[SPIRAL_ATCG_WORDS];
 } spiral_round_material_t;
 
-/* Derived per-round constants for the v2.2-strength substrate hot path.
- * They are fully determined by spiral_round_material_t and the round index,
- * so caching them in init_session() is bit-exact and keeps KAT unchanged. */
+/* Derived constants for the v2.2.5 Feistel function.
+ * Context layout and ciphertexts are incompatible with v2.2.4; recompile
+ * callers and track the algorithm version outside this raw block API. */
 typedef struct {
     uint32_t k[5];
     uint32_t s_xor[5];
-    uint8_t alpha[5];
-    uint8_t beta[5];
-    uint8_t rot_a[5];
-    uint8_t rot_b[5];
 } spiral_round_cache_t;
 
 typedef struct {

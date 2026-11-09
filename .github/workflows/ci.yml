@@ -64,6 +64,12 @@ jobs:
       - name: Run KAT generator (verifies all 20 entries)
         run: ./build/kat_generator > /tmp/kat.out && tail -2 /tmp/kat.out
 
+      - name: Run v2.2.5 security regressions and dispatch checks
+        run: |
+          ./build/test_v225_regressions
+          ./build/test_affine_rank
+          ./build/test_round_paths
+
       - name: Run benchmark (smoke test)
         run: ./build/benchmark | head -40
 
@@ -107,6 +113,10 @@ jobs:
         shell: msys2 {0}
         run: ./build/test_pair_symmetry
 
+      - name: Run complete suite including v2.2.5 regressions
+        shell: msys2 {0}
+        run: make test
+
       - name: Run KAT generator
         shell: msys2 {0}
         run: ./build/kat_generator > kat.out && tail -2 kat.out
@@ -126,10 +136,12 @@ jobs:
         run: |
           ./build/kat_generator > /tmp/fresh_kat.out
           # Extract ciphertexts from fresh run
-          grep "ciphertext = " /tmp/fresh_kat.out | sort -u > /tmp/fresh_ct.txt
+          grep "ciphertext = " /tmp/fresh_kat.out > /tmp/fresh_ct.txt
           # Extract ciphertexts from checked-in KAT
-          grep "ciphertext = " docs/KAT.md | sort -u > /tmp/repo_ct.txt
-          # Compare
+          grep "ciphertext = " docs/KAT.md > /tmp/repo_ct.txt
+          # Compare in scenario/policy order, without sorting away label swaps.
+          test "$(wc -l < /tmp/fresh_ct.txt)" -eq 20
+          test "$(wc -l < /tmp/repo_ct.txt)" -eq 20
           if diff /tmp/fresh_ct.txt /tmp/repo_ct.txt; then
             echo "KAT bit-exactness: PASS (20/20 ciphertexts match)"
           else

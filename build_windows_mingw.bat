@@ -3,12 +3,21 @@ setlocal
 if not exist build mkdir build
 set CFLAGS=-O0 -std=c11 -Wall -Wextra -Wpedantic -Iinclude
 gcc %CFLAGS% -c src\spiral_atcg.c -o build\spiral_atcg.o
+if errorlevel 1 exit /b 1
 ar rcs build\libspiral_atcg.a build\spiral_atcg.o
-gcc %CFLAGS% tests\test_roundtrip.c build\libspiral_atcg.a -o build\test_roundtrip.exe
-gcc %CFLAGS% tests\test_pair_symmetry.c build\libspiral_atcg.a -o build\test_pair_symmetry.exe
-gcc %CFLAGS% tests\test_material_trace.c build\libspiral_atcg.a -o build\test_material_trace.exe
+if errorlevel 1 exit /b 1
+for %%t in (test_roundtrip test_pair_symmetry test_batch_api test_avalanche test_v225_regressions test_affine_rank kat_generator test_material_trace) do (
+    gcc %CFLAGS% tests\%%t.c build\libspiral_atcg.a -o build\%%t.exe
+    if errorlevel 1 exit /b 1
+)
+gcc %CFLAGS% tests\test_round_paths.c -o build\test_round_paths.exe
+if errorlevel 1 exit /b 1
 gcc %CFLAGS% bench\benchmark.c build\libspiral_atcg.a -o build\benchmark.exe
-build\test_roundtrip.exe
-build\test_pair_symmetry.exe
+if errorlevel 1 exit /b 1
+for %%t in (test_roundtrip test_pair_symmetry test_batch_api test_avalanche test_v225_regressions test_affine_rank test_round_paths kat_generator) do (
+    build\%%t.exe
+    if errorlevel 1 exit /b 1
+)
 build\benchmark.exe
+if errorlevel 1 exit /b 1
 endlocal

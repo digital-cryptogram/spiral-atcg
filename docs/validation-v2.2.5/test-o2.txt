@@ -1,0 +1,91 @@
+clang -O2 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_affine_rank.c build-v225-o2/libspiral_atcg.a -o build-v225-o2/test_affine_rank
+./build-v225-o2/test_roundtrip
+ROUNDTRIP PASSED policy=BASE
+ROUNDTRIP PASSED policy=SAFE
+ROUNDTRIP PASSED policy=AGGR
+ROUNDTRIP PASSED policy=NULL
+ALL V2 ROUNDTRIPS PASSED
+./build-v225-o2/test_pair_symmetry
+PAIR SYMMETRY PASSED policy=BASE
+PAIR SYMMETRY PASSED policy=SAFE
+PAIR SYMMETRY PASSED policy=AGGR
+PAIR SYMMETRY PASSED policy=NULL
+ALL PAIR SYMMETRY TESTS PASSED
+./build-v225-o2/test_avalanche
+AVALANCHE policy=BASE
+  lane 0 hd=17
+  lane 1 hd=16
+  lane 2 hd=15
+  lane 3 hd=13
+  lane 4 hd=14
+  lane 5 hd=19
+  lane 6 hd=14
+  lane 7 hd=17
+  lane 8 hd=16
+  lane 9 hd=11
+  total_hd=152 active_lanes=10/10
+AVALANCHE policy=SAFE
+  lane 0 hd=18
+  lane 1 hd=15
+  lane 2 hd=16
+  lane 3 hd=17
+  lane 4 hd=14
+  lane 5 hd=11
+  lane 6 hd=17
+  lane 7 hd=17
+  lane 8 hd=15
+  lane 9 hd=12
+  total_hd=152 active_lanes=10/10
+AVALANCHE policy=AGGR
+  lane 0 hd=18
+  lane 1 hd=17
+  lane 2 hd=16
+  lane 3 hd=11
+  lane 4 hd=22
+  lane 5 hd=20
+  lane 6 hd=17
+  lane 7 hd=16
+  lane 8 hd=15
+  lane 9 hd=19
+  total_hd=171 active_lanes=10/10
+AVALANCHE policy=NULL
+  lane 0 hd=16
+  lane 1 hd=12
+  lane 2 hd=22
+  lane 3 hd=15
+  lane 4 hd=17
+  lane 5 hd=18
+  lane 6 hd=16
+  lane 7 hd=16
+  lane 8 hd=12
+  lane 9 hd=20
+  total_hd=164 active_lanes=10/10
+ALL AVALANCHE TESTS PASSED
+./build-v225-o2/test_batch_api
+BATCH API PASSED policy=BASE rounds=1..32 including in-place/empty
+BATCH API PASSED policy=SAFE rounds=1..32 including in-place/empty
+BATCH API PASSED policy=AGGR rounds=1..32 including in-place/empty
+BATCH API PASSED policy=NULL rounds=1..32 including in-place/empty
+ALL BATCH API TESTS PASSED
+./build-v225-o2/test_v225_regressions
+V2.2.5 REGRESSION PASSED policy=BASE (roundtrip 1..32, structural 16..32)
+V2.2.5 REGRESSION PASSED policy=SAFE (roundtrip 1..32, structural 16..32)
+V2.2.5 REGRESSION PASSED policy=AGGR (roundtrip 1..32, structural 16..32)
+V2.2.5 REGRESSION PASSED policy=NULL (roundtrip 1..32, structural 16..32)
+roundtrip/inplace=16384 structural_samples=8704 differential_samples=26112
+./build-v225-o2/test_round_paths
+FAST/GENERIC PATHS PASSED (128 sessions, encrypt and decrypt)
+./build-v225-o2/test_affine_rank
+AFFINE RANK PASSED policy=BASE: 4 sessions, rank=641/641 each
+AFFINE RANK PASSED policy=SAFE: 4 sessions, rank=641/641 each
+AFFINE RANK PASSED policy=AGGR: 4 sessions, rank=641/641 each
+AFFINE RANK PASSED policy=NULL: 4 sessions, rank=641/641 each
+./build-v225-o2/kat_generator >build-v225-o2/kat_check.txt
+tail -3 build-v225-o2/kat_check.txt
+ALL 20 FROZEN KAT ENTRIES MATCHED
+ALL 20 KAT ENTRIES PASSED ROUNDTRIP
+ALL 5 SCENARIOS PASSED POLICY-DISTINCTNESS CHECK
+clang -O2 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -Iinclude bench/benchmark.c build-v225-o2/libspiral_atcg.a -o build-v225-o2/benchmark
+clang -O2 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_thorough_avalanche.c build-v225-o2/libspiral_atcg.a -o build-v225-o2/test_thorough_avalanche
+clang -O2 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_material_trace.c build-v225-o2/libspiral_atcg.a -o build-v225-o2/test_material_trace
+clang -O2 -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -Iinclude tests/qres_v2_runner.c build-v225-o2/libspiral_atcg.a -lm -o build-v225-o2/qres_v2_runner

@@ -8,6 +8,14 @@ This document explains what kind of external review would be most useful, what i
 
 ---
 
+## Current review target
+
+v2.2.5 uses a balanced Feistel substrate to address the v2.2.4 full-round
+invariants. Start with [release notes](docs/CHANGELOG_v2.2.5.md) and
+[validation](docs/VALIDATION_v2.2.5.md). Historical audit summaries do not
+establish security for either version. Review of the retained engineering KDF
+and round function remains necessary.
+
 ## What to review
 
 We are especially interested in technical analysis of the following:
@@ -54,9 +62,12 @@ make bench        # high-resolution benchmark
 ### Test vectors and probe data
 
 - [`docs/KAT.md`](docs/KAT.md) — 5 scenarios × 4 policies = 20 deterministic KAT entries
-- [`docs/QRES_data.csv`](docs/QRES_data.csv) — 72-row deterministic structural-probe dataset
+- [`docs/QRES_v2.2.5.csv`](docs/QRES_v2.2.5.csv) — 72-row deterministic structural-probe dataset
 
-### Probe methodology
+### Historical probe methodology (v2.2.4)
+
+These reports predate the discovered invariants; current results are in
+[`docs/VALIDATION_v2.2.5.md`](docs/VALIDATION_v2.2.5.md).
 
 - [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) — extended structural probe battery
 - [`docs/ADVANCED_AUDIT.md`](docs/ADVANCED_AUDIT.md) — advanced exploratory probes; also documents one corrected probe (cube-position collision false positive) preserved for transparency

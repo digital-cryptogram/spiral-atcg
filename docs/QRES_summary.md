@@ -1,5 +1,7 @@
 # Spiral-ATCG v2.2-strength QRES summary
 
+> Historical v2.2.4 record, not v2.2.5 validation. Full-round structural weaknesses were subsequently found; see [reassessment](REASSESSMENT_v2.2.4.zh-TW.md) and [v2.2.5 validation](VALIDATION_v2.2.5.md).
+
 ## TL;DR
 
 v2.2-strength resolves the Phase B framing problem by upgrading the substrate round function instead of trying to defend slower diffusion. The ATCG v2.0 transcription model is unchanged, but the internal `SpiralRound` now uses a v1-inspired round-dependent diffusion structure.
